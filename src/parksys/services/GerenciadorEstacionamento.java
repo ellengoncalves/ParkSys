@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import parksys.entities.Mensalista;
 import parksys.entities.Registro;
 import parksys.entities.Vaga;
 import parksys.entities.Veiculo;
@@ -19,10 +21,12 @@ public class GerenciadorEstacionamento {
 
     private final HashMap<String, Vaga> vagas;
     private final ArrayList<Registro> registros;
+    private final LinkedList<Mensalista> mensalistas;
 
     public GerenciadorEstacionamento() {
         this.vagas = new HashMap<>();
         this.registros = new ArrayList<>();
+        this.mensalistas = new LinkedList<>();
         inicializarVagas();
     }
 
@@ -69,5 +73,24 @@ public class GerenciadorEstacionamento {
 
     public List<Registro> getRegistros() {
         return Collections.unmodifiableList(registros);
+    }
+
+    public void cadastrarMensalista(Mensalista mensalista) {
+        // LinkedList eh adequada aqui porque o cadastro de mensalistas pode ter
+        // insercoes no fim e remocoes no inicio com frequencia, operacoes que
+        // nao exigem deslocar os demais elementos da lista
+        mensalistas.addLast(mensalista);
+    }
+
+    public Mensalista removerPrimeiroMensalista() {
+        if (mensalistas.isEmpty()) {
+            return null;
+        }
+
+        return mensalistas.removeFirst();
+    }
+
+    public List<Mensalista> getMensalistas() {
+        return Collections.unmodifiableList(mensalistas);
     }
 }
