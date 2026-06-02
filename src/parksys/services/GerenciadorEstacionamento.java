@@ -1,5 +1,6 @@
 package parksys.services;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,12 +59,13 @@ public class GerenciadorEstacionamento {
         return registro;
     }
 
-    public Registro registrarSaida(String placa, LocalDateTime dataSaida, double valorPago) {
+    public Registro registrarSaida(String placa, LocalDateTime dataSaida) {
         for (Registro registro : registros) {
             boolean mesmaPlaca = registro.getVeiculo().getPlaca().equalsIgnoreCase(placa);
             boolean registroAberto = registro.getDataSaida() == null;
 
             if (mesmaPlaca && registroAberto) {
+                double valorPago = calcularValorEstadia(registro, dataSaida);
                 registro.setDataSaida(dataSaida);
                 registro.setValorPago(valorPago);
                 return registro;
@@ -71,6 +73,17 @@ public class GerenciadorEstacionamento {
         }
 
         return null;
+    }
+
+    public Registro registrarSaida(String placa) {
+        return registrarSaida(placa, LocalDateTime.now());
+    }
+
+    private double calcularValorEstadia(Registro registro, LocalDateTime dataSaida) {
+        long minutos = Duration.between(registro.getDataEntrada(), dataSaida).toMinutes();
+        long horasCobradas = Math.max(1, (long) Math.ceil(minutos / 60.0));
+
+        return horasCobradas * registro.getVeiculo().getTipo().getTarifaHora();
     }
 
     public List<Registro> getRegistros() {
