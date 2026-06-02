@@ -3,6 +3,7 @@ package parksys.services;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -78,6 +79,19 @@ public class GerenciadorEstacionamento {
 
     public TreeSet<Registro> getRegistrosOrdenados() {
         return new TreeSet<>(registros);
+    }
+
+    public List<Registro> getRegistrosPorReceitaDecrescente() {
+        ArrayList<Registro> registrosOrdenados = new ArrayList<>(registros);
+
+        // O Comparable implementado em Registro representa a ordem natural da classe, 
+        //      usada quando queremos os registros em ordem cronologica pela dataEntrada
+        // Ja o Comparator eh usado quando precisamos de uma ordenacao especifica para
+        //      um relatorio, sem alterar essa ordem natural; aqui a copia da lista e
+        //      ordenada por valorPago decrescente para exibir as maiores receitas primeiro
+        registrosOrdenados.sort(Comparator.comparingDouble(Registro::getValorPago).reversed());
+
+        return registrosOrdenados;
     }
 
     public void cadastrarMensalista(Mensalista mensalista) {
