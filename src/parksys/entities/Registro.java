@@ -3,7 +3,7 @@ package parksys.entities;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class Registro implements Serializable {
+public class Registro implements Serializable, Comparable<Registro> {
     private static final long serialVersionUID = 1L;
 
     private Veiculo veiculo;
@@ -65,5 +65,22 @@ public class Registro implements Serializable {
 
     public void setThreadOrigem(String threadOrigem) {
         this.threadOrigem = threadOrigem;
+    }
+
+    @Override
+    public int compareTo(Registro outro) {
+        int comparacaoData = this.dataEntrada.compareTo(outro.dataEntrada);
+
+        if (comparacaoData != 0) {
+            return comparacaoData;
+        }
+
+        int comparacaoPlaca = this.veiculo.getPlaca().compareToIgnoreCase(outro.veiculo.getPlaca());
+
+        if (comparacaoPlaca != 0) {
+            return comparacaoPlaca;
+        }
+
+        return this.idVaga.compareTo(outro.idVaga);
     }
 }
