@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import parksys.entities.Mensalista;
 import parksys.entities.Registro;
@@ -73,6 +74,10 @@ public class GerenciadorEstacionamento {
 
     public List<Registro> getRegistros() {
         return Collections.unmodifiableList(registros);
+    }
+
+    public TreeSet<Registro> getRegistrosOrdenados() {
+        return new TreeSet<>(registros);
     }
 
     public void cadastrarMensalista(Mensalista mensalista) {
