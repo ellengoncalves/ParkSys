@@ -15,6 +15,7 @@ import parksys.entities.Mensalista;
 import parksys.entities.Registro;
 import parksys.entities.Vaga;
 import parksys.entities.Veiculo;
+import parksys.enums.StatusVaga;
 import parksys.enums.TipoVeiculo;
 
 public class GerenciadorEstacionamento {
@@ -54,6 +55,13 @@ public class GerenciadorEstacionamento {
 
     public Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga) {
         Veiculo veiculo = new Veiculo(placa, tipoVeiculo);
+        List<Vaga> vagasParaOcupar = buscarVagasConsecutivasDisponiveis(idVaga, tipoVeiculo.getVagasOcupadas());
+
+        for (Vaga vaga : vagasParaOcupar) {
+            vaga.setStatus(StatusVaga.OCUPADA);
+            vaga.setVeiculoAtual(veiculo);
+        }
+
         Registro registro = new Registro(veiculo, idVaga, LocalDateTime.now());
         registros.add(registro);
         return registro;
@@ -68,6 +76,7 @@ public class GerenciadorEstacionamento {
                 double valorPago = calcularValorEstadia(registro, dataSaida);
                 registro.setDataSaida(dataSaida);
                 registro.setValorPago(valorPago);
+                liberarVagasDoVeiculo(placa);
                 return registro;
             }
         }
@@ -84,6 +93,46 @@ public class GerenciadorEstacionamento {
         long horasCobradas = Math.max(1, (long) Math.ceil(minutos / 60.0));
 
         return horasCobradas * registro.getVeiculo().getTipo().getTarifaHora();
+    }
+
+    private List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas) {
+        ArrayList<Vaga> vagasEncontradas = new ArrayList<>();
+        char fileira = idVagaInicial.charAt(0);
+        int numeroInicial = Integer.parseInt(idVagaInicial.substring(1));
+
+        for (int deslocamento = 0; deslocamento < quantidadeVagas; deslocamento++) {
+            int numeroAtual = numeroInicial + deslocamento;
+
+            if (numeroAtual > VAGAS_POR_FILEIRA) {
+                throw new IllegalArgumentException("Nao ha vagas consecutivas suficientes na fileira " + fileira);
+            }
+
+            String idVagaAtual = String.format("%c%02d", fileira, numeroAtual);
+            Vaga vagaAtual = vagas.get(idVagaAtual);
+
+            if (vagaAtual == null) {
+                throw new IllegalArgumentException("Vaga nao encontrada: " + idVagaAtual);
+            }
+
+            if (!vagaAtual.getStatus().isDisponivel()) {
+                throw new IllegalStateException("Vaga indisponivel: " + idVagaAtual);
+            }
+
+            vagasEncontradas.add(vagaAtual);
+        }
+
+        return vagasEncontradas;
+    }
+
+    private void liberarVagasDoVeiculo(String placa) {
+        for (Vaga vaga : vagas.values()) {
+            Veiculo veiculoAtual = vaga.getVeiculoAtual();
+
+            if (veiculoAtual != null && veiculoAtual.getPlaca().equalsIgnoreCase(placa)) {
+                vaga.setStatus(StatusVaga.LIVRE);
+                vaga.setVeiculoAtual(null);
+            }
+        }
     }
 
     public List<Registro> getRegistros() {
