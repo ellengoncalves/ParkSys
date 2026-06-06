@@ -65,6 +65,7 @@ public class GerenciadorEstacionamento {
         }
 
         Registro registro = new Registro(veiculo, idVaga, LocalDateTime.now());
+        registro.setThreadOrigem(Thread.currentThread().getName());
         registros.add(registro);
         return registro;
     }
