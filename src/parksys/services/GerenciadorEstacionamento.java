@@ -45,18 +45,20 @@ public class GerenciadorEstacionamento {
         }
     }
 
-    public Vaga getVagaPorId(String idVaga) {
+    public synchronized Vaga getVagaPorId(String idVaga) {
         return vagas.get(idVaga);
     }
 
-    public Map<String, Vaga> getVagas() {
-        return Collections.unmodifiableMap(vagas);
+    public synchronized Map<String, Vaga> getVagas() {
+        return Collections.unmodifiableMap(new HashMap<>(vagas));
     }
 
-    public Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga) {
+    public synchronized Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga) {
         Veiculo veiculo = new Veiculo(placa, tipoVeiculo);
         List<Vaga> vagasParaOcupar = buscarVagasConsecutivasDisponiveis(idVaga, tipoVeiculo.getVagasOcupadas());
 
+        // Sem synchronized, duas threads poderiam verificar a mesma vaga como livre
+        // ao mesmo tempo e registrar entradas simultaneas nela, causando race condition.
         for (Vaga vaga : vagasParaOcupar) {
             vaga.setStatus(StatusVaga.OCUPADA);
             vaga.setVeiculoAtual(veiculo);
@@ -67,7 +69,7 @@ public class GerenciadorEstacionamento {
         return registro;
     }
 
-    public Registro registrarSaida(String placa, LocalDateTime dataSaida) {
+    public synchronized Registro registrarSaida(String placa, LocalDateTime dataSaida) {
         for (Registro registro : registros) {
             boolean mesmaPlaca = registro.getVeiculo().getPlaca().equalsIgnoreCase(placa);
             boolean registroAberto = registro.getDataSaida() == null;
@@ -84,7 +86,7 @@ public class GerenciadorEstacionamento {
         return null;
     }
 
-    public Registro registrarSaida(String placa) {
+    public synchronized Registro registrarSaida(String placa) {
         return registrarSaida(placa, LocalDateTime.now());
     }
 
@@ -95,7 +97,7 @@ public class GerenciadorEstacionamento {
         return horasCobradas * registro.getVeiculo().getTipo().getTarifaHora();
     }
 
-    private List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas) {
+    private synchronized List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas) {
         ArrayList<Vaga> vagasEncontradas = new ArrayList<>();
         char fileira = idVagaInicial.charAt(0);
         int numeroInicial = Integer.parseInt(idVagaInicial.substring(1));
@@ -124,7 +126,7 @@ public class GerenciadorEstacionamento {
         return vagasEncontradas;
     }
 
-    private void liberarVagasDoVeiculo(String placa) {
+    private synchronized void liberarVagasDoVeiculo(String placa) {
         for (Vaga vaga : vagas.values()) {
             Veiculo veiculoAtual = vaga.getVeiculoAtual();
 
@@ -135,15 +137,15 @@ public class GerenciadorEstacionamento {
         }
     }
 
-    public List<Registro> getRegistros() {
-        return Collections.unmodifiableList(registros);
+    public synchronized List<Registro> getRegistros() {
+        return Collections.unmodifiableList(new ArrayList<>(registros));
     }
 
-    public TreeSet<Registro> getRegistrosOrdenados() {
+    public synchronized TreeSet<Registro> getRegistrosOrdenados() {
         return new TreeSet<>(registros);
     }
 
-    public List<Registro> getRegistrosPorReceitaDecrescente() {
+    public synchronized List<Registro> getRegistrosPorReceitaDecrescente() {
         ArrayList<Registro> registrosOrdenados = new ArrayList<>(registros);
 
         // O Comparable implementado em Registro representa a ordem natural da classe, 
