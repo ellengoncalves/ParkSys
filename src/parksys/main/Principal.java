@@ -2,11 +2,15 @@ package parksys.main;
 
 import parksys.entities.Registro;
 import parksys.enums.TipoVeiculo;
+import parksys.services.DadosParkSys;
 import parksys.services.EntradaRunnable;
+import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 import parksys.services.MonitorRunnable;
 
 public class Principal {
+    private static final String PATH_DADOS = "dados/parksys.ser";
+
     public static void main(String[] args) {
         GerenciadorEstacionamento gerenciador = new GerenciadorEstacionamento();
 
@@ -37,6 +41,7 @@ public class Principal {
 
         monitor.interrupt();
         exibirRelatorioFinal(gerenciador);
+        demonstrarThreadOrigemAposDesserializacao(gerenciador);
     }
 
     private static void interromperThreads(Thread[] threadsEntrada, Thread monitor) {
@@ -58,6 +63,28 @@ public class Principal {
                             + " | Tipo: " + registro.getVeiculo().getTipo()
                             + " | Vaga inicial: " + registro.getIdVaga()
                             + " | Thread: " + registro.getThreadOrigem());
+        }
+    }
+
+    private static void demonstrarThreadOrigemAposDesserializacao(GerenciadorEstacionamento gerenciador) {
+        GerenciadorArquivo.serializar(
+                gerenciador.getVagas(),
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                PATH_DADOS);
+
+        DadosParkSys dadosDesserializados = GerenciadorArquivo.desserializar(PATH_DADOS);
+
+        System.out.println();
+        System.out.println("Thread origem apos desserializacao");
+        System.out.println("==================================");
+
+        for (Registro registro : dadosDesserializados.getRegistros()) {
+            // threadOrigem e transient, entao esse valor nao e gravado no arquivo
+            // serializado; ao desserializar, o Java restaura o campo com null.
+            System.out.println(
+                    "Placa: " + registro.getVeiculo().getPlaca()
+                            + " | Thread desserializada: " + registro.getThreadOrigem());
         }
     }
 }
