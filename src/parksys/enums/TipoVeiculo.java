@@ -6,18 +6,18 @@ public enum TipoVeiculo {
     SUV("Caminhonete / SUV", 18.00, 2),
     CAMINHAO("Caminhao", 30.00, 3);
 
-    private final String nomeLegivel;
+    private final String descricao;
     private final double tarifaHora;
     private final int vagasOcupadas;
 
-    TipoVeiculo(String nomeLegivel, double tarifaHora, int vagasOcupadas) {
-        this.nomeLegivel = nomeLegivel;
+    TipoVeiculo(String descricao, double tarifaHora, int vagasOcupadas) {
+        this.descricao = descricao;
         this.tarifaHora = tarifaHora;
         this.vagasOcupadas = vagasOcupadas;
     }
 
-    public String getNomeLegivel() {
-        return nomeLegivel;
+    public String getDescricao() {
+        return descricao;
     }
 
     public double getTarifaHora() {
@@ -30,6 +30,6 @@ public enum TipoVeiculo {
 
     @Override
     public String toString() {
-        return nomeLegivel;
+        return descricao;
     }
 }
