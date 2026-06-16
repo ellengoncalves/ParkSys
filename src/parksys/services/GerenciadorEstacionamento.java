@@ -17,6 +17,9 @@ import parksys.entities.Vaga;
 import parksys.entities.Veiculo;
 import parksys.enums.StatusVaga;
 import parksys.enums.TipoVeiculo;
+import parksys.exceptions.PlacaInvalidaException;
+import parksys.exceptions.VagaOcupadaException;
+import parksys.exceptions.VeiculoNaoEncontradoException;
 
 public class GerenciadorEstacionamento {
     private static final int TOTAL_FILEIRAS = 2;
@@ -53,8 +56,10 @@ public class GerenciadorEstacionamento {
         return Collections.unmodifiableMap(new HashMap<>(vagas));
     }
 
-    public synchronized Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga) {
-        Veiculo veiculo = new Veiculo(placa, tipoVeiculo);
+    public synchronized Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga)
+            throws PlacaInvalidaException, VagaOcupadaException {
+        String placaNormalizada = normalizarPlaca(placa);
+        Veiculo veiculo = new Veiculo(placaNormalizada, tipoVeiculo);
         List<Vaga> vagasParaOcupar = buscarVagasConsecutivasDisponiveis(idVaga, tipoVeiculo.getVagasOcupadas());
 
         // Sem synchronized, duas threads poderiam verificar a mesma vaga como livre
@@ -70,25 +75,45 @@ public class GerenciadorEstacionamento {
         return registro;
     }
 
-    public synchronized Registro registrarSaida(String placa, LocalDateTime dataSaida) {
+    public synchronized Registro registrarSaida(String placa, LocalDateTime dataSaida)
+            throws PlacaInvalidaException, VeiculoNaoEncontradoException {
+        String placaNormalizada = normalizarPlaca(placa);
+
         for (Registro registro : registros) {
-            boolean mesmaPlaca = registro.getVeiculo().getPlaca().equalsIgnoreCase(placa);
+            boolean mesmaPlaca = registro.getVeiculo().getPlaca().equalsIgnoreCase(placaNormalizada);
             boolean registroAberto = registro.getDataSaida() == null;
 
             if (mesmaPlaca && registroAberto) {
                 double valorPago = calcularValorEstadia(registro, dataSaida);
                 registro.setDataSaida(dataSaida);
                 registro.setValorPago(valorPago);
-                liberarVagasDoVeiculo(placa);
+                liberarVagasDoVeiculo(placaNormalizada);
                 return registro;
             }
         }
 
-        return null;
+        throw new VeiculoNaoEncontradoException("Veiculo nao encontrado ou sem registro aberto: " + placaNormalizada);
     }
 
-    public synchronized Registro registrarSaida(String placa) {
+    public synchronized Registro registrarSaida(String placa)
+            throws PlacaInvalidaException, VeiculoNaoEncontradoException {
         return registrarSaida(placa, LocalDateTime.now());
+    }
+
+    private String normalizarPlaca(String placa) throws PlacaInvalidaException {
+        if (placa == null) {
+            throw new PlacaInvalidaException("Placa nao pode ser nula.");
+        }
+
+        String placaNormalizada = placa.trim().replace("-", "").replace(" ", "").toUpperCase();
+        boolean placaAntiga = placaNormalizada.matches("[A-Z]{3}[0-9]{4}");
+        boolean placaMercosul = placaNormalizada.matches("[A-Z]{3}[0-9][A-Z][0-9]{2}");
+
+        if (!placaAntiga && !placaMercosul) {
+            throw new PlacaInvalidaException("Placa invalida: " + placa);
+        }
+
+        return placaNormalizada;
     }
 
     private double calcularValorEstadia(Registro registro, LocalDateTime dataSaida) {
@@ -98,33 +123,49 @@ public class GerenciadorEstacionamento {
         return horasCobradas * registro.getVeiculo().getTipo().getTarifaHora();
     }
 
-    private synchronized List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas) {
+    private synchronized List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas)
+            throws VagaOcupadaException {
         ArrayList<Vaga> vagasEncontradas = new ArrayList<>();
-        char fileira = idVagaInicial.charAt(0);
-        int numeroInicial = Integer.parseInt(idVagaInicial.substring(1));
+        String idNormalizado = normalizarIdVaga(idVagaInicial);
+        char fileira = idNormalizado.charAt(0);
+        int numeroInicial = Integer.parseInt(idNormalizado.substring(1));
 
         for (int deslocamento = 0; deslocamento < quantidadeVagas; deslocamento++) {
             int numeroAtual = numeroInicial + deslocamento;
 
             if (numeroAtual > VAGAS_POR_FILEIRA) {
-                throw new IllegalArgumentException("Nao ha vagas consecutivas suficientes na fileira " + fileira);
+                throw new VagaOcupadaException("Nao ha vagas consecutivas suficientes na fileira " + fileira);
             }
 
             String idVagaAtual = String.format("%c%02d", fileira, numeroAtual);
             Vaga vagaAtual = vagas.get(idVagaAtual);
 
             if (vagaAtual == null) {
-                throw new IllegalArgumentException("Vaga nao encontrada: " + idVagaAtual);
+                throw new VagaOcupadaException("Vaga nao encontrada: " + idVagaAtual);
             }
 
             if (!vagaAtual.getStatus().isDisponivel()) {
-                throw new IllegalStateException("Vaga indisponivel: " + idVagaAtual);
+                throw new VagaOcupadaException("Vaga indisponivel: " + idVagaAtual);
             }
 
             vagasEncontradas.add(vagaAtual);
         }
 
         return vagasEncontradas;
+    }
+
+    private String normalizarIdVaga(String idVaga) throws VagaOcupadaException {
+        if (idVaga == null) {
+            throw new VagaOcupadaException("ID da vaga nao pode ser nulo.");
+        }
+
+        String idNormalizado = idVaga.trim().toUpperCase();
+
+        if (!idNormalizado.matches("[AB][0-9]{2}")) {
+            throw new VagaOcupadaException("ID da vaga invalido: " + idVaga);
+        }
+
+        return idNormalizado;
     }
 
     private synchronized void liberarVagasDoVeiculo(String placa) {
