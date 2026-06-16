@@ -1,6 +1,8 @@
 package parksys.services;
 
 import parksys.enums.TipoVeiculo;
+import parksys.exceptions.PlacaInvalidaException;
+import parksys.exceptions.VagaOcupadaException;
 
 public class EntradaRunnable implements Runnable {
     private final String placa;
@@ -28,6 +30,10 @@ public class EntradaRunnable implements Runnable {
             return;
         }
 
-        gerenciadorEstacionamento.registrarEntrada(placa, tipoVeiculo, idVagaDesejada);
+        try {
+            gerenciadorEstacionamento.registrarEntrada(placa, tipoVeiculo, idVagaDesejada);
+        } catch (PlacaInvalidaException | VagaOcupadaException e) {
+            System.out.println("Erro ao registrar entrada: " + e.getMessage());
+        }
     }
 }
