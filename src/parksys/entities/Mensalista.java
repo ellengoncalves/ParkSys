@@ -102,4 +102,19 @@ public class Mensalista implements Serializable {
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
+
+    @Override
+    public String toString() {
+        return "Mensalista{"
+                + "nome='" + nome + '\''
+                + ", documento='" + documento + '\''
+                + ", telefone='" + telefone + '\''
+                + ", placa='" + placa + '\''
+                + ", tipoVeiculo=" + tipoVeiculo
+                + ", idVagaReservada='" + idVagaReservada + '\''
+                + ", valorMensalidade=" + valorMensalidade
+                + ", dataCadastro=" + dataCadastro
+                + ", ativo=" + ativo
+                + '}';
+    }
 }

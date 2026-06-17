@@ -44,4 +44,13 @@ public class Vaga implements Serializable {
     public void setVeiculoAtual(Veiculo veiculoAtual) {
         this.veiculoAtual = veiculoAtual;
     }
+
+    @Override
+    public String toString() {
+        return "Vaga{"
+                + "id='" + id + '\''
+                + ", status=" + status
+                + ", veiculoAtual=" + veiculoAtual
+                + '}';
+    }
 }
