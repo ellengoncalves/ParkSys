@@ -30,4 +30,12 @@ public class Veiculo implements Serializable {
     public void setTipo(TipoVeiculo tipo) {
         this.tipo = tipo;
     }
+
+    @Override
+    public String toString() {
+        return "Veiculo{"
+                + "placa='" + placa + '\''
+                + ", tipo=" + tipo
+                + '}';
+    }
 }

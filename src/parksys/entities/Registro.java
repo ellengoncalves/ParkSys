@@ -83,4 +83,16 @@ public class Registro implements Serializable, Comparable<Registro> {
 
         return this.idVaga.compareTo(outro.idVaga);
     }
+
+    @Override
+    public String toString() {
+        return "Registro{"
+                + "veiculo=" + veiculo
+                + ", idVaga='" + idVaga + '\''
+                + ", dataEntrada=" + dataEntrada
+                + ", dataSaida=" + dataSaida
+                + ", valorPago=" + valorPago
+                + ", threadOrigem='" + threadOrigem + '\''
+                + '}';
+    }
 }
