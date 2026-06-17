@@ -25,31 +25,21 @@ public class GerenciadorArquivo {
 
     public static void serializar(Map<String, Vaga> vagas, List<Registro> registros,
         List<Mensalista> mensalistas, String path) {
-        ObjectOutputStream outputStream = null;
         String resultado = "Serializacao nao concluida.";
 
-        try {
-            criarDiretorioPaiSeNecessario(path);
-            outputStream = new ObjectOutputStream(new FileOutputStream(path));
+        criarDiretorioPaiSeNecessario(path);
+
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream(path))) {
             outputStream.writeObject(new DadosParkSys(vagas, registros, mensalistas));
             resultado = "Serializacao concluida com sucesso: " + path;
         } catch (IOException e) {
             resultado = "Erro ao serializar dados: " + e.getMessage();
         } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.close();
-                } catch (IOException e) {
-                    resultado = "Erro ao fechar arquivo de serializacao: " + e.getMessage();
-                }
-            }
-
             logarResultado(resultado);
         }
     }
 
     public static DadosParkSys desserializar(String path) {
-        ObjectInputStream inputStream = null;
         DadosParkSys dados = criarDadosVazios();
         String resultado = "Desserializacao nao concluida.";
         File arquivo = new File(path);
@@ -60,22 +50,15 @@ public class GerenciadorArquivo {
                 return dados;
             }
 
-            inputStream = new ObjectInputStream(new FileInputStream(arquivo));
-            dados = (DadosParkSys) inputStream.readObject();
+            try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(arquivo))) {
+                dados = (DadosParkSys) inputStream.readObject();
+            }
             resultado = "Desserializacao concluida com sucesso: " + path;
         } catch (IOException e) {
             resultado = "Erro ao desserializar dados: " + e.getMessage();
         } catch (ClassNotFoundException e) {
             resultado = "Classe nao encontrada ao desserializar dados: " + e.getMessage();
         } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    resultado = "Erro ao fechar arquivo de desserializacao: " + e.getMessage();
-                }
-            }
-
             logarResultado(resultado);
         }
 
@@ -83,12 +66,11 @@ public class GerenciadorArquivo {
     }
 
     public static void exportarRelatorioTxt(List<Registro> registros, String path) {
-        BufferedWriter writer = null;
         String resultado = "Exportacao de relatorio nao concluida.";
 
-        try {
-            criarDiretorioPaiSeNecessario(path);
-            writer = new BufferedWriter(new FileWriter(path));
+        criarDiretorioPaiSeNecessario(path);
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
             writer.write("Relatorio de Registros - ParkSys");
             writer.newLine();
             writer.write("Gerado em: " + LocalDateTime.now().format(FORMATADOR_DATA_HORA));
@@ -131,14 +113,6 @@ public class GerenciadorArquivo {
         } catch (IOException e) {
             resultado = "Erro ao exportar relatorio: " + e.getMessage();
         } finally {
-            if (writer != null) {
-                try {
-                    writer.close();
-                } catch (IOException e) {
-                    resultado = "Erro ao fechar relatorio: " + e.getMessage();
-                }
-            }
-
             logarResultado(resultado);
         }
     }
