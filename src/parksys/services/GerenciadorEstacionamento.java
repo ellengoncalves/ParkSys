@@ -22,6 +22,8 @@ import parksys.exceptions.VagaOcupadaException;
 import parksys.exceptions.VeiculoNaoEncontradoException;
 
 public class GerenciadorEstacionamento {
+    private static final GerenciadorEstacionamento INSTANCE = new GerenciadorEstacionamento();
+
     private static final int TOTAL_FILEIRAS = 2;
     private static final int VAGAS_POR_FILEIRA = 15;
     private static final char PRIMEIRA_FILEIRA = 'A';
@@ -30,11 +32,15 @@ public class GerenciadorEstacionamento {
     private final ArrayList<Registro> registros;
     private final LinkedList<Mensalista> mensalistas;
 
-    public GerenciadorEstacionamento() {
+    private GerenciadorEstacionamento() {
         this.vagas = new HashMap<>();
         this.registros = new ArrayList<>();
         this.mensalistas = new LinkedList<>();
         inicializarVagas();
+    }
+
+    public static GerenciadorEstacionamento getInstance() {
+        return INSTANCE;
     }
 
     private void inicializarVagas() {
