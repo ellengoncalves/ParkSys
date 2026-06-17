@@ -20,6 +20,7 @@ import parksys.enums.TipoVeiculo;
 import parksys.exceptions.PlacaInvalidaException;
 import parksys.exceptions.VagaOcupadaException;
 import parksys.exceptions.VeiculoNaoEncontradoException;
+import parksys.observer.EstacionamentoObserver;
 
 public class GerenciadorEstacionamento {
     private static final GerenciadorEstacionamento INSTANCE = new GerenciadorEstacionamento();
@@ -31,11 +32,13 @@ public class GerenciadorEstacionamento {
     private final HashMap<String, Vaga> vagas;
     private final ArrayList<Registro> registros;
     private final LinkedList<Mensalista> mensalistas;
+    private final List<EstacionamentoObserver> observadores;
 
     private GerenciadorEstacionamento() {
         this.vagas = new HashMap<>();
         this.registros = new ArrayList<>();
         this.mensalistas = new LinkedList<>();
+        this.observadores = new ArrayList<>();
         inicializarVagas();
     }
 
@@ -72,6 +75,7 @@ public class GerenciadorEstacionamento {
         // ao mesmo tempo e registrar entradas simultaneas nela, causando race condition.
         for (Vaga vaga : vagasParaOcupar) {
             vaga.setStatus(StatusVaga.OCUPADA);
+            notificarObservadores(vaga.getId(), StatusVaga.OCUPADA);
             vaga.setVeiculoAtual(veiculo);
         }
 
@@ -104,6 +108,20 @@ public class GerenciadorEstacionamento {
     public synchronized Registro registrarSaida(String placa)
             throws PlacaInvalidaException, VeiculoNaoEncontradoException {
         return registrarSaida(placa, LocalDateTime.now());
+    }
+
+    public synchronized void addObserver(EstacionamentoObserver observer) {
+        observadores.add(observer);
+    }
+
+    public synchronized void removeObserver(EstacionamentoObserver observer) {
+        observadores.remove(observer);
+    }
+
+    private void notificarObservadores(String idVaga, StatusVaga novoStatus) {
+        for (EstacionamentoObserver observer : observadores) {
+            observer.onVagaAlterada(idVaga, novoStatus);
+        }
     }
 
     private String normalizarPlaca(String placa) throws PlacaInvalidaException {
@@ -180,6 +198,7 @@ public class GerenciadorEstacionamento {
 
             if (veiculoAtual != null && veiculoAtual.getPlaca().equalsIgnoreCase(placa)) {
                 vaga.setStatus(StatusVaga.LIVRE);
+                notificarObservadores(vaga.getId(), StatusVaga.LIVRE);
                 vaga.setVeiculoAtual(null);
             }
         }
