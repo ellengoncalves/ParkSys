@@ -5,6 +5,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -14,10 +16,12 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 
 public class TelaSaida extends JFrame {
     private static final long serialVersionUID = 1L;
+    private static final String CAMINHO_DADOS = "dados/parksys.ser";
 
     private final GerenciadorEstacionamento gerenciador;
     private final JTextField campoPlaca;
@@ -36,6 +40,13 @@ public class TelaSaida extends JFrame {
         setSize(340, 140);
         setLocationRelativeTo(null);
         setResizable(false);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                salvarDados();
+            }
+        });
     }
 
     private void montarComponentes() {
@@ -96,6 +107,14 @@ public class TelaSaida extends JFrame {
     private void limparCampos() {
         campoPlaca.setText("");
         campoPlaca.requestFocusInWindow();
+    }
+
+    private void salvarDados() {
+        GerenciadorArquivo.serializar(
+                gerenciador.getVagas(),
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                CAMINHO_DADOS);
     }
 
     public static void main(String[] args) {

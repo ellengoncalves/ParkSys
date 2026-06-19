@@ -14,10 +14,13 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import parksys.observer.PainelMonitor;
+import parksys.services.DadosParkSys;
+import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 
 public class TelaInicial extends JFrame {
     private static final long serialVersionUID = 1L;
+    private static final String CAMINHO_DADOS = "dados/parksys.ser";
 
     private final GerenciadorEstacionamento gerenciador;
     private final PainelMonitor painelMonitor;
@@ -26,6 +29,7 @@ public class TelaInicial extends JFrame {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
         this.painelMonitor = new PainelMonitor();
 
+        carregarDados();
         gerenciador.addObserver(painelMonitor);
 
         configurarJanela();
@@ -84,9 +88,26 @@ public class TelaInicial extends JFrame {
     }
 
     private void fecharAplicacao() {
+        salvarDados();
         gerenciador.removeObserver(painelMonitor);
         dispose();
         System.exit(0);
+    }
+
+    private void carregarDados() {
+        DadosParkSys dados = GerenciadorArquivo.desserializar(CAMINHO_DADOS);
+
+        if (dados.getVagas() != null && !dados.getVagas().isEmpty()) {
+            gerenciador.carregarDados(dados);
+        }
+    }
+
+    private void salvarDados() {
+        GerenciadorArquivo.serializar(
+                gerenciador.getVagas(),
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                CAMINHO_DADOS);
     }
 
     public static void main(String[] args) {

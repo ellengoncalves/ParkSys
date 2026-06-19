@@ -2,6 +2,8 @@ package parksys.ui;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,10 +21,12 @@ import parksys.entities.Registro;
 import parksys.entities.Vaga;
 import parksys.entities.Veiculo;
 import parksys.enums.StatusVaga;
+import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 
 public class TelaRelatorio extends JFrame {
     private static final long serialVersionUID = 1L;
+    private static final String CAMINHO_DADOS = "dados/parksys.ser";
 
     private static final DateTimeFormatter FORMATADOR_DATA_HORA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -46,6 +50,13 @@ public class TelaRelatorio extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(620, 460);
         setLocationRelativeTo(null);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent event) {
+                salvarDados();
+            }
+        });
     }
 
     private void montarComponentes() {
@@ -56,7 +67,7 @@ public class TelaRelatorio extends JFrame {
         botaoAtualizar.addActionListener(event -> atualizarRelatorio());
 
         JButton botaoFechar = new JButton("Fechar");
-        botaoFechar.addActionListener(event -> dispose());
+        botaoFechar.addActionListener(event -> fecharJanela());
 
         JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         painelBotoes.add(botaoAtualizar);
@@ -133,6 +144,18 @@ public class TelaRelatorio extends JFrame {
                 + " | Entrada: " + entrada
                 + " | Saida: " + saida
                 + " | Valor: " + FORMATADOR_MOEDA.format(registro.getValorPago());
+    }
+
+    private void fecharJanela() {
+        dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }
+
+    private void salvarDados() {
+        GerenciadorArquivo.serializar(
+                gerenciador.getVagas(),
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                CAMINHO_DADOS);
     }
 
     public static void main(String[] args) {
