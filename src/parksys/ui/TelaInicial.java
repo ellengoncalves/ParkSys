@@ -60,12 +60,16 @@ public class TelaInicial extends JFrame {
         JButton botaoSaida = new JButton("Registrar saida");
         botaoSaida.addActionListener(event -> abrirTelaSaida());
 
+        JButton botaoCadastroMensalista = new JButton("Cadastrar mensalista");
+        botaoCadastroMensalista.addActionListener(event -> abrirTelaCadastroMensalista());
+
         JButton botaoRelatorio = new JButton("Relatorio");
         botaoRelatorio.addActionListener(event -> abrirTelaRelatorio());
 
-        JPanel painelBotoes = new JPanel(new GridLayout(3, 1, 8, 8));
+        JPanel painelBotoes = new JPanel(new GridLayout(4, 1, 8, 8));
         painelBotoes.add(botaoEntrada);
         painelBotoes.add(botaoSaida);
+        painelBotoes.add(botaoCadastroMensalista);
         painelBotoes.add(botaoRelatorio);
 
         JPanel painelCentral = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 16));
@@ -81,6 +85,10 @@ public class TelaInicial extends JFrame {
 
     private void abrirTelaSaida() {
         new TelaSaida().setVisible(true);
+    }
+
+    private void abrirTelaCadastroMensalista() {
+        new TelaCadastroMensalista().setVisible(true);
     }
 
     private void abrirTelaRelatorio() {
