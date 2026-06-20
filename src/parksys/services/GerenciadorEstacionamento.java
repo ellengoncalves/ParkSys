@@ -46,6 +46,28 @@ public class GerenciadorEstacionamento {
         return INSTANCE;
     }
 
+    public synchronized void carregarDados(DadosParkSys dados) {
+        if (dados == null) {
+            return;
+        }
+
+        vagas.clear();
+        registros.clear();
+        mensalistas.clear();
+
+        if (dados.getVagas() != null) {
+            vagas.putAll(dados.getVagas());
+        }
+
+        if (dados.getRegistros() != null) {
+            registros.addAll(dados.getRegistros());
+        }
+
+        if (dados.getMensalistas() != null) {
+            mensalistas.addAll(dados.getMensalistas());
+        }
+    }
+
     private void inicializarVagas() {
         for (int fileira = 0; fileira < TOTAL_FILEIRAS; fileira++) {
             char letraFileira = (char) (PRIMEIRA_FILEIRA + fileira);
