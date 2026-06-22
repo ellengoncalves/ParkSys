@@ -63,10 +63,9 @@ public class TelaInicial extends JFrame {
     private void configurarJanela() {
         setTitle("ParkSys");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setMinimumSize(new Dimension(900, 640));
-        setSize(1000, 700);
+        setMinimumSize(new Dimension(760, 520));
+        setSize(900, 600);
         setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         addWindowListener(new WindowAdapter() {
             @Override
