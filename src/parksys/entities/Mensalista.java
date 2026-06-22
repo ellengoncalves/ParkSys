@@ -2,6 +2,7 @@ package parksys.entities;
 
 import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import parksys.enums.TipoVeiculo;
 
@@ -16,6 +17,7 @@ public class Mensalista implements Serializable {
     private String idVagaReservada;
     private double valorMensalidade;
     private LocalDate dataCadastro;
+    private LocalDateTime dataHoraCadastro;
     private boolean ativo;
 
     public Mensalista(String nome, String documento, String telefone, String placa, TipoVeiculo tipoVeiculo, 
@@ -28,6 +30,7 @@ public class Mensalista implements Serializable {
         this.idVagaReservada = idVagaReservada;
         this.valorMensalidade = valorMensalidade;
         this.dataCadastro = LocalDate.now();
+        this.dataHoraCadastro = LocalDateTime.now();
         this.ativo = true;
     }
 
@@ -93,6 +96,20 @@ public class Mensalista implements Serializable {
 
     public void setDataCadastro(LocalDate dataCadastro) {
         this.dataCadastro = dataCadastro;
+        this.dataHoraCadastro = dataCadastro != null ? dataCadastro.atStartOfDay() : null;
+    }
+
+    public LocalDateTime getDataHoraCadastro() {
+        if (dataHoraCadastro != null) {
+            return dataHoraCadastro;
+        }
+
+        return dataCadastro != null ? dataCadastro.atStartOfDay() : null;
+    }
+
+    public void setDataHoraCadastro(LocalDateTime dataHoraCadastro) {
+        this.dataHoraCadastro = dataHoraCadastro;
+        this.dataCadastro = dataHoraCadastro != null ? dataHoraCadastro.toLocalDate() : null;
     }
 
     public boolean isAtivo() {
@@ -114,6 +131,7 @@ public class Mensalista implements Serializable {
                 + ", idVagaReservada='" + idVagaReservada + '\''
                 + ", valorMensalidade=" + valorMensalidade
                 + ", dataCadastro=" + dataCadastro
+                + ", dataHoraCadastro=" + dataHoraCadastro
                 + ", ativo=" + ativo
                 + '}';
     }
