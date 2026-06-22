@@ -75,8 +75,8 @@ public class TelaCadastroMensalista extends JFrame {
     private void configurarJanela() {
         setTitle("Cadastro de Mensalista");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setMinimumSize(new Dimension(960, 620));
-        setSize(1020, 660);
+        setMinimumSize(new Dimension(980, 700));
+        setSize(1040, 740);
         setLocationRelativeTo(null);
 
         addWindowListener(new WindowAdapter() {
@@ -112,7 +112,7 @@ public class TelaCadastroMensalista extends JFrame {
                 FONTE_LABEL,
                 ROXO_FECHADO));
         GridBagConstraints constraints = new GridBagConstraints();
-        constraints.insets = new Insets(9, 14, 9, 14);
+        constraints.insets = new Insets(7, 14, 7, 14);
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
 
@@ -128,8 +128,24 @@ public class TelaCadastroMensalista extends JFrame {
         atualizarDesenhoVeiculo();
 
         adicionarCampo(painelFormulario, constraints, 0, "Nome:", campoNome);
-        adicionarCampo(painelFormulario, constraints, 1, "Documento:", campoDocumento);
-        adicionarCampo(painelFormulario, constraints, 2, "Telefone:", campoTelefone);
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                1,
+                "Documento:",
+                FormularioHelper.criarCampoComAjuda(
+                        campoDocumento,
+                        "Exemplos: CPF 123.456.789-00 ou RG 12.345.678-9",
+                        "Informe CPF ou RG do mensalista."));
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                2,
+                "Telefone:",
+                FormularioHelper.criarCampoComAjuda(
+                        campoTelefone,
+                        "Exemplo: (16) 99999-9999",
+                        "Informe DDD e numero de telefone."));
         adicionarCampo(
                 painelFormulario,
                 constraints,
@@ -137,8 +153,24 @@ public class TelaCadastroMensalista extends JFrame {
                 "Placa:",
                 FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
         adicionarCampo(painelFormulario, constraints, 4, "Tipo de ve\u00edculo:", comboTipoVeiculo);
-        adicionarCampo(painelFormulario, constraints, 5, "Vaga reservada:", campoVagaReservada);
-        adicionarCampo(painelFormulario, constraints, 6, "Mensalidade:", campoValorMensalidade);
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                5,
+                "Vaga reservada:",
+                FormularioHelper.criarCampoComAjuda(
+                        campoVagaReservada,
+                        "Formato aceito: A01 ate B15",
+                        "Informe uma vaga entre A01 e B15."));
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                6,
+                "Mensalidade:",
+                FormularioHelper.criarCampoComAjuda(
+                        campoValorMensalidade,
+                        "Exemplo: 250,00 ou 250.00",
+                        "Informe o valor mensal usando virgula ou ponto para centavos."));
 
         JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
         painelConteudo.setOpaque(false);

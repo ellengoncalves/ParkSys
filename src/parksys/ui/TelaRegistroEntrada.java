@@ -120,7 +120,15 @@ public class TelaRegistroEntrada extends JFrame {
                 "Placa:",
                 FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
         adicionarCampo(painelFormulario, constraints, 1, "Tipo de ve\u00edculo:", comboTipoVeiculo);
-        adicionarCampo(painelFormulario, constraints, 2, "Vaga desejada:", campoVaga);
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                2,
+                "Vaga desejada:",
+                FormularioHelper.criarCampoComAjuda(
+                        campoVaga,
+                        "Formato aceito: A01 ate B15",
+                        "Informe uma vaga entre A01 e B15."));
 
         JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
         painelConteudo.setOpaque(false);

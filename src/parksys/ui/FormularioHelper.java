@@ -31,15 +31,23 @@ final class FormularioHelper {
 
     static JPanel criarCampoPlacaComAjuda(JTextField campoPlaca, Border bordaPadrao) {
         configurarCampoPlaca(campoPlaca, bordaPadrao);
+        return criarPainelCampoComAjuda(campoPlaca, AJUDA_PLACA);
+    }
 
-        JLabel textoAjuda = new JLabel(AJUDA_PLACA);
+    static JPanel criarCampoComAjuda(JTextField campo, String ajuda, String tooltip) {
+        campo.setToolTipText(tooltip);
+        return criarPainelCampoComAjuda(campo, ajuda);
+    }
+
+    private static JPanel criarPainelCampoComAjuda(JTextField campo, String ajuda) {
+        JLabel textoAjuda = new JLabel(ajuda);
         textoAjuda.setFont(FONTE_AJUDA);
         textoAjuda.setForeground(COR_AJUDA);
         textoAjuda.setBorder(new EmptyBorder(5, 2, 0, 0));
 
         JPanel painelCampo = new JPanel(new BorderLayout());
         painelCampo.setOpaque(false);
-        painelCampo.add(campoPlaca, BorderLayout.NORTH);
+        painelCampo.add(campo, BorderLayout.NORTH);
         painelCampo.add(textoAjuda, BorderLayout.CENTER);
         return painelCampo;
     }
