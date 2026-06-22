@@ -4,12 +4,18 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -47,11 +53,17 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private final Map<String, StatusVaga> statusVagas;
     private final DefaultTableModel modeloTabela;
     private final JTable tabelaVagas;
+    private final Consumer<String> aoSelecionarVaga;
 
     public PainelMonitor() {
+        this(null);
+    }
+
+    public PainelMonitor(Consumer<String> aoSelecionarVaga) {
         this.statusVagas = new TreeMap<>();
         this.modeloTabela = criarModeloTabela();
         this.tabelaVagas = new JTable(modeloTabela);
+        this.aoSelecionarVaga = aoSelecionarVaga;
 
         configurarJanela();
         montarComponentes();
@@ -121,6 +133,14 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
         tabelaVagas.getTableHeader().setBackground(ROXO_FECHADO);
         tabelaVagas.getTableHeader().setReorderingAllowed(false);
         tabelaVagas.getTableHeader().setPreferredSize(new Dimension(0, 34));
+        tabelaVagas.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent event) {
+                if (event.getClickCount() == 2 && aoSelecionarVaga != null) {
+                    selecionarVagaAtual();
+                }
+            }
+        });
 
         JScrollPane painelRolagem = new JScrollPane(tabelaVagas);
         painelRolagem.getViewport().setBackground(BRANCO);
@@ -134,6 +154,11 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
 
         painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
         painelPrincipal.add(painelRolagem, BorderLayout.CENTER);
+
+        if (aoSelecionarVaga != null) {
+            painelPrincipal.add(criarPainelAcoes(), BorderLayout.SOUTH);
+        }
+
         add(painelPrincipal, BorderLayout.CENTER);
         atualizarMapaVisual();
     }
@@ -177,6 +202,61 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
         painelCabecalho.add(titulo, BorderLayout.NORTH);
         painelCabecalho.add(subtitulo, BorderLayout.CENTER);
         return painelCabecalho;
+    }
+
+    private JPanel criarPainelAcoes() {
+        JButton botaoUsarVaga = new JButton("Usar vaga selecionada");
+        estilizarBotao(botaoUsarVaga, ROXO_FECHADO, 180);
+        botaoUsarVaga.addActionListener(event -> selecionarVagaAtual());
+
+        JButton botaoFechar = new JButton("Fechar");
+        estilizarBotao(botaoFechar, VERMELHO_STATUS, 110);
+        botaoFechar.addActionListener(event -> dispose());
+
+        JPanel painelAcoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        painelAcoes.setBackground(FUNDO_CLARO);
+        painelAcoes.add(botaoUsarVaga);
+        painelAcoes.add(botaoFechar);
+        return painelAcoes;
+    }
+
+    private void estilizarBotao(JButton botao, Color corFundo, int largura) {
+        botao.setFont(FONTE_CABECALHO);
+        botao.setForeground(Color.WHITE);
+        botao.setBackground(corFundo);
+        botao.setOpaque(true);
+        botao.setFocusPainted(false);
+        botao.setBorder(new EmptyBorder(10, 16, 10, 16));
+        botao.setPreferredSize(new Dimension(largura, 40));
+    }
+
+    private void selecionarVagaAtual() {
+        int linhaSelecionada = tabelaVagas.getSelectedRow();
+
+        if (linhaSelecionada < 0) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Selecione uma vaga livre para preencher o campo.",
+                    "Selecionar vaga",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int linhaModelo = tabelaVagas.convertRowIndexToModel(linhaSelecionada);
+        String idVaga = String.valueOf(modeloTabela.getValueAt(linhaModelo, 0));
+        StatusVaga status = statusVagas.get(idVaga);
+
+        if (status != StatusVaga.LIVRE) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "A vaga " + idVaga + " nao esta livre para cadastro.",
+                    "Selecionar vaga",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        aoSelecionarVaga.accept(idVaga);
+        dispose();
     }
 
     private static class MonitorTableCellRenderer extends DefaultTableCellRenderer {

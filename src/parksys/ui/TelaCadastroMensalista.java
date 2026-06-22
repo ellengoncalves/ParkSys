@@ -130,6 +130,9 @@ public class TelaCadastroMensalista extends JFrame {
         comboTipoVeiculo.setPreferredSize(new Dimension(390, 36));
         comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
         atualizarDesenhoVeiculo();
+        JButton botaoVerVagas = FormularioHelper.criarBotaoVerVagas(ROSA_QUEIMADO);
+        botaoVerVagas.addActionListener(event ->
+                FormularioHelper.abrirMonitorVagas(this, gerenciador, campoVagaReservada));
 
         adicionarCampo(painelFormulario, constraints, 0, "Nome:", campoNome);
         adicionarCampo(
@@ -162,8 +165,9 @@ public class TelaCadastroMensalista extends JFrame {
                 constraints,
                 5,
                 "Vaga reservada:",
-                FormularioHelper.criarCampoComAjuda(
+                FormularioHelper.criarCampoComAcaoEAjuda(
                         campoVagaReservada,
+                        botaoVerVagas,
                         "Formato aceito: A01 ate B15",
                         "Informe uma vaga entre A01 e B15."));
         adicionarCampo(

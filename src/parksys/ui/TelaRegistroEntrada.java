@@ -112,6 +112,9 @@ public class TelaRegistroEntrada extends JFrame {
         comboTipoVeiculo.setPreferredSize(new Dimension(360, 36));
         comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
         atualizarDesenhoVeiculo();
+        JButton botaoVerVagas = FormularioHelper.criarBotaoVerVagas(ROXO_FECHADO);
+        botaoVerVagas.addActionListener(event ->
+                FormularioHelper.abrirMonitorVagas(this, gerenciador, campoVaga));
 
         adicionarCampo(
                 painelFormulario,
@@ -125,8 +128,9 @@ public class TelaRegistroEntrada extends JFrame {
                 constraints,
                 2,
                 "Vaga desejada:",
-                FormularioHelper.criarCampoComAjuda(
+                FormularioHelper.criarCampoComAcaoEAjuda(
                         campoVaga,
+                        botaoVerVagas,
                         "Formato aceito: A01 ate B15",
                         "Informe uma vaga entre A01 e B15."));
 
