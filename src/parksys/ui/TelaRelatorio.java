@@ -172,12 +172,17 @@ public class TelaRelatorio extends JFrame {
         }
 
         double receitaTotal = 0.0;
+        int veiculosEmAberto = 0;
         LocalDate hoje = LocalDate.now();
         StringBuilder registrosDoDia = new StringBuilder();
         StringBuilder registrosPorReceita = new StringBuilder();
 
         for (Registro registro : gerenciador.getRegistrosOrdenados()) {
             receitaTotal += registro.getValorPago();
+
+            if (registro.getDataSaida() == null) {
+                veiculosEmAberto++;
+            }
 
             if (registro.getDataEntrada() != null
                     && registro.getDataEntrada().toLocalDate().equals(hoje)) {
@@ -193,9 +198,13 @@ public class TelaRelatorio extends JFrame {
         relatorio.append("RELATORIO DO ESTACIONAMENTO").append(System.lineSeparator());
         relatorio.append(System.lineSeparator());
         relatorio.append("Vagas livres: ").append(vagasLivres).append(System.lineSeparator());
-        relatorio.append("Vagas ocupadas: ").append(vagasOcupadas).append(System.lineSeparator());
+        relatorio.append("Vagas ocupadas: ").append(vagasOcupadas)
+                .append(" (espacos fisicos ocupados)").append(System.lineSeparator());
         relatorio.append("Vagas reservadas: ").append(vagasReservadas).append(System.lineSeparator());
+        relatorio.append("Veiculos em aberto: ").append(veiculosEmAberto).append(System.lineSeparator());
         relatorio.append("Receita total: ").append(FORMATADOR_MOEDA.format(receitaTotal)).append(System.lineSeparator());
+        relatorio.append("Observacao: moto/carro ocupam 1 vaga, SUV ocupa 2 e caminhao ocupa 3.")
+                .append(System.lineSeparator());
         relatorio.append(System.lineSeparator());
         relatorio.append("REGISTROS DO DIA - ORDEM CRONOLOGICA").append(System.lineSeparator());
 
@@ -221,9 +230,10 @@ public class TelaRelatorio extends JFrame {
     private String formatarRegistro(Registro registro) {
         Veiculo veiculo = registro.getVeiculo();
         String status = registro.getDataSaida() == null ? "[EM ABERTO]" : "[FINALIZADO]";
-        String idVaga = Objects.toString(registro.getIdVaga(), "-").toUpperCase(Locale.ROOT);
         String placa = veiculo != null ? veiculo.getPlaca() : "-";
         String tipo = veiculo != null ? veiculo.getTipo().toString() : "-";
+        int vagasUsadas = veiculo != null && veiculo.getTipo() != null ? veiculo.getTipo().getVagasOcupadas() : 0;
+        String vagas = formatarVagasOcupadas(registro.getIdVaga(), vagasUsadas);
         String entrada = registro.getDataEntrada() != null
                 ? registro.getDataEntrada().format(FORMATADOR_DATA_HORA)
                 : "-";
@@ -232,12 +242,26 @@ public class TelaRelatorio extends JFrame {
                 : "-";
 
         return status
-                + " Vaga: " + idVaga
+                + " " + vagas
                 + " | Placa: " + placa
                 + " | Tipo: " + tipo
+                + " | Vagas usadas: " + vagasUsadas
                 + " | Entrada: " + entrada
                 + " | Saida: " + saida
                 + " | Valor: " + FORMATADOR_MOEDA.format(registro.getValorPago());
+    }
+
+    private String formatarVagasOcupadas(String idVagaInicial, int vagasUsadas) {
+        String idNormalizado = Objects.toString(idVagaInicial, "-").toUpperCase(Locale.ROOT);
+
+        if (vagasUsadas <= 1 || !idNormalizado.matches("[A-Z][0-9]{2}")) {
+            return "Vaga: " + idNormalizado;
+        }
+
+        char fileira = idNormalizado.charAt(0);
+        int numeroInicial = Integer.parseInt(idNormalizado.substring(1));
+        int numeroFinal = numeroInicial + vagasUsadas - 1;
+        return String.format("Vagas: %s-%c%02d", idNormalizado, fileira, numeroFinal);
     }
 
     private void fecharJanela() {
