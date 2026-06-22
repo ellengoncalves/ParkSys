@@ -47,6 +47,7 @@ public class TelaRegistroEntrada extends JFrame {
     private final JTextField campoPlaca;
     private final JTextField campoVaga;
     private final JComboBox<TipoVeiculo> comboTipoVeiculo;
+    private final PainelDesenhoVeiculo painelDesenhoVeiculo;
     private Border bordaCampoPadrao;
 
     public TelaRegistroEntrada() {
@@ -54,6 +55,7 @@ public class TelaRegistroEntrada extends JFrame {
         this.campoPlaca = new JTextField(12);
         this.campoVaga = new JTextField(6);
         this.comboTipoVeiculo = new JComboBox<>();
+        this.painelDesenhoVeiculo = new PainelDesenhoVeiculo();
 
         configurarJanela();
         preencherTiposVeiculo();
@@ -63,8 +65,8 @@ public class TelaRegistroEntrada extends JFrame {
     private void configurarJanela() {
         setTitle("Registro de Entrada");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setMinimumSize(new Dimension(720, 440));
-        setSize(760, 480);
+        setMinimumSize(new Dimension(860, 500));
+        setSize(920, 560);
         setLocationRelativeTo(null);
 
         addWindowListener(new WindowAdapter() {
@@ -108,6 +110,8 @@ public class TelaRegistroEntrada extends JFrame {
         estilizarCampo(campoVaga);
         comboTipoVeiculo.setFont(FONTE_PADRAO);
         comboTipoVeiculo.setPreferredSize(new Dimension(360, 36));
+        comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
+        atualizarDesenhoVeiculo();
 
         adicionarCampo(
                 painelFormulario,
@@ -118,6 +122,11 @@ public class TelaRegistroEntrada extends JFrame {
         adicionarCampo(painelFormulario, constraints, 1, "Tipo de ve\u00edculo:", comboTipoVeiculo);
         adicionarCampo(painelFormulario, constraints, 2, "Vaga desejada:", campoVaga);
 
+        JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
+        painelConteudo.setOpaque(false);
+        painelConteudo.add(painelFormulario, BorderLayout.CENTER);
+        painelConteudo.add(painelDesenhoVeiculo, BorderLayout.EAST);
+
         JButton botaoRegistrar = new JButton("Registrar Entrada");
         estilizarBotao(botaoRegistrar);
         botaoRegistrar.addActionListener(event -> registrarEntrada());
@@ -127,7 +136,7 @@ public class TelaRegistroEntrada extends JFrame {
         painelBotoes.add(botaoRegistrar);
 
         painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
-        painelPrincipal.add(painelFormulario, BorderLayout.CENTER);
+        painelPrincipal.add(painelConteudo, BorderLayout.CENTER);
         painelPrincipal.add(painelBotoes, BorderLayout.SOUTH);
         add(painelPrincipal, BorderLayout.CENTER);
     }
@@ -188,6 +197,10 @@ public class TelaRegistroEntrada extends JFrame {
         botao.setFocusPainted(false);
         botao.setBorder(new EmptyBorder(12, 24, 12, 24));
         botao.setPreferredSize(new Dimension(190, 44));
+    }
+
+    private void atualizarDesenhoVeiculo() {
+        painelDesenhoVeiculo.setTipoVeiculo((TipoVeiculo) comboTipoVeiculo.getSelectedItem());
     }
 
     private void registrarEntrada() {
