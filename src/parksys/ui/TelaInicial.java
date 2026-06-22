@@ -24,6 +24,7 @@ import parksys.observer.PainelMonitor;
 import parksys.services.DadosParkSys;
 import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
+import parksys.services.MonitorRunnable;
 
 public class TelaInicial extends JFrame {
     private static final long serialVersionUID = 1L;
@@ -42,15 +43,18 @@ public class TelaInicial extends JFrame {
 
     private final GerenciadorEstacionamento gerenciador;
     private final PainelMonitor painelMonitor;
+    private final Thread monitorThread;
 
     public TelaInicial() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
         this.painelMonitor = new PainelMonitor();
+        this.monitorThread = new Thread(new MonitorRunnable(gerenciador), "Monitor-Aplicacao");
 
         carregarDados();
         painelMonitor.carregarStatusAtual(gerenciador.getVagas());
         gerenciador.addObserver(painelMonitor);
         painelMonitor.setVisible(true);
+        iniciarMonitorDaemon();
 
         configurarJanela();
         montarComponentes();
@@ -167,7 +171,13 @@ public class TelaInicial extends JFrame {
         new TelaRelatorio().setVisible(true);
     }
 
+    private void iniciarMonitorDaemon() {
+        monitorThread.setDaemon(true);
+        monitorThread.start();
+    }
+
     private void fecharAplicacao() {
+        monitorThread.interrupt();
         salvarDados();
         gerenciador.removeObserver(painelMonitor);
         painelMonitor.dispose();
