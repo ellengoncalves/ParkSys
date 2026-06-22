@@ -4,12 +4,16 @@ import javax.swing.SwingUtilities;
 
 import parksys.entities.Registro;
 import parksys.enums.TipoVeiculo;
+import parksys.services.DadosParkSys;
 import parksys.services.EntradaRunnable;
+import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 import parksys.services.MonitorRunnable;
 import parksys.ui.TelaInicial;
 
 public class Principal {
+    private static final String CAMINHO_DEMO_THREADS = "dados/parksys-demo-threads.ser";
+
     public static void main(String[] args) {
         executarDemonstracaoThreads();
         SwingUtilities.invokeLater(() -> new TelaInicial().setVisible(true));
@@ -45,6 +49,7 @@ public class Principal {
 
         monitorThread.interrupt();
         exibirRelatorioFinal(gerenciador);
+        demonstrarThreadOrigemTransient(gerenciador);
     }
 
     private static void interromperThreads(Thread[] threadsEntrada) {
@@ -58,6 +63,26 @@ public class Principal {
 
         for (Registro registro : gerenciador.getRegistrosOrdenados()) {
             System.out.println(registro);
+        }
+    }
+
+    private static void demonstrarThreadOrigemTransient(GerenciadorEstacionamento gerenciador) {
+        GerenciadorArquivo.serializar(
+                gerenciador.getVagas(),
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                CAMINHO_DEMO_THREADS);
+
+        DadosParkSys dadosDesserializados = GerenciadorArquivo.desserializar(CAMINHO_DEMO_THREADS);
+
+        System.out.println("=== Demonstracao do campo transient threadOrigem ===");
+
+        for (Registro registro : dadosDesserializados.getRegistros()) {
+            // threadOrigem guarda apenas qual Thread criou o registro em tempo de execucao.
+            // Como o campo e transient, ele nao deve ser gravado no arquivo serializado;
+            // por isso, apos a desserializacao, o valor esperado para o campo e null.
+            System.out.println("Placa: " + registro.getVeiculo().getPlaca()
+                    + " | threadOrigem apos desserializar: " + registro.getThreadOrigem());
         }
     }
 }
