@@ -49,6 +49,7 @@ public class TelaInicial extends JFrame {
 
         carregarDados();
         gerenciador.addObserver(painelMonitor);
+        painelMonitor.setVisible(true);
 
         configurarJanela();
         montarComponentes();
@@ -168,6 +169,7 @@ public class TelaInicial extends JFrame {
     private void fecharAplicacao() {
         salvarDados();
         gerenciador.removeObserver(painelMonitor);
+        painelMonitor.dispose();
         dispose();
         System.exit(0);
     }
