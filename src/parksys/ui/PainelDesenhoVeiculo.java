@@ -21,8 +21,8 @@ class PainelDesenhoVeiculo extends JPanel {
     private static final Color ROSA = new Color(181, 101, 118);
     private static final Color TEXTO = new Color(46, 46, 46);
     private static final Color CINZA = new Color(90, 90, 96);
-    private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 14);
-    private static final Font FONTE_AJUDA = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 15);
+    private static final Font FONTE_AJUDA = new Font("Segoe UI", Font.PLAIN, 14);
 
     private TipoVeiculo tipoVeiculo;
 
@@ -55,11 +55,15 @@ class PainelDesenhoVeiculo extends JPanel {
 
         g2.setFont(FONTE_TITULO);
         g2.setColor(ROXO);
-        g2.drawString(tipoVeiculo.toString(), 18, 28);
+        desenharTextoCentralizado(g2, tipoVeiculo.toString(), largura, 30);
 
         g2.setFont(FONTE_AJUDA);
         g2.setColor(TEXTO);
-        g2.drawString("Ocupa " + tipoVeiculo.getVagasOcupadas() + textoVaga(), 18, altura - 18);
+        desenharTextoCentralizado(
+                g2,
+                "Ocupa " + tipoVeiculo.getVagasOcupadas() + textoVaga(),
+                largura,
+                altura - 18);
 
         desenharVeiculo(g2, largura, altura);
         g2.dispose();
@@ -67,6 +71,12 @@ class PainelDesenhoVeiculo extends JPanel {
 
     private String textoVaga() {
         return tipoVeiculo.getVagasOcupadas() == 1 ? " vaga" : " vagas";
+    }
+
+    private void desenharTextoCentralizado(Graphics2D g2, String texto, int largura, int y) {
+        int larguraTexto = g2.getFontMetrics().stringWidth(texto);
+        int x = (largura - larguraTexto) / 2;
+        g2.drawString(texto, x, y);
     }
 
     private void desenharVeiculo(Graphics2D g2, int largura, int altura) {
