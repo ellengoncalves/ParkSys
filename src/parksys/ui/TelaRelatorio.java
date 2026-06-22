@@ -174,14 +174,19 @@ public class TelaRelatorio extends JFrame {
         double receitaTotal = 0.0;
         LocalDate hoje = LocalDate.now();
         StringBuilder registrosDoDia = new StringBuilder();
+        StringBuilder registrosPorReceita = new StringBuilder();
 
-        for (Registro registro : gerenciador.getRegistros()) {
+        for (Registro registro : gerenciador.getRegistrosOrdenados()) {
             receitaTotal += registro.getValorPago();
 
             if (registro.getDataEntrada() != null
                     && registro.getDataEntrada().toLocalDate().equals(hoje)) {
                 registrosDoDia.append(formatarRegistro(registro)).append(System.lineSeparator());
             }
+        }
+
+        for (Registro registro : gerenciador.getRegistrosPorReceitaDecrescente()) {
+            registrosPorReceita.append(formatarRegistro(registro)).append(System.lineSeparator());
         }
 
         StringBuilder relatorio = new StringBuilder();
@@ -192,12 +197,21 @@ public class TelaRelatorio extends JFrame {
         relatorio.append("Vagas reservadas: ").append(vagasReservadas).append(System.lineSeparator());
         relatorio.append("Receita total: ").append(FORMATADOR_MOEDA.format(receitaTotal)).append(System.lineSeparator());
         relatorio.append(System.lineSeparator());
-        relatorio.append("REGISTROS DO DIA").append(System.lineSeparator());
+        relatorio.append("REGISTROS DO DIA - ORDEM CRONOLOGICA").append(System.lineSeparator());
 
         if (registrosDoDia.length() == 0) {
             relatorio.append("Nenhum registro encontrado para hoje.").append(System.lineSeparator());
         } else {
             relatorio.append(registrosDoDia);
+        }
+
+        relatorio.append(System.lineSeparator());
+        relatorio.append("REGISTROS POR RECEITA DECRESCENTE").append(System.lineSeparator());
+
+        if (registrosPorReceita.length() == 0) {
+            relatorio.append("Nenhum registro encontrado.").append(System.lineSeparator());
+        } else {
+            relatorio.append(registrosPorReceita);
         }
 
         areaRelatorio.setText(relatorio.toString());
