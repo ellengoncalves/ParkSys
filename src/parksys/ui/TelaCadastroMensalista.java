@@ -10,6 +10,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.text.NumberFormat;
+import java.util.Locale;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -36,6 +38,7 @@ public class TelaCadastroMensalista extends JFrame {
     private static final Color ROXO_FECHADO = new Color(94, 58, 135);
     private static final Color LILAS_SUAVE = new Color(237, 231, 246);
     private static final Color ROSA_QUEIMADO = new Color(181, 101, 118);
+    private static final Color VERMELHO_ALERTA = new Color(181, 82, 92);
     private static final Color FUNDO_CLARO = new Color(250, 247, 251);
     private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
     private static final Color TEXTO_SECUNDARIO = new Color(92, 82, 101);
@@ -44,6 +47,8 @@ public class TelaCadastroMensalista extends JFrame {
     private static final Font FONTE_PADRAO = new Font("Segoe UI", Font.PLAIN, 15);
     private static final Font FONTE_LABEL = new Font("Segoe UI", Font.BOLD, 14);
     private static final Font FONTE_BOTAO = new Font("Segoe UI", Font.BOLD, 15);
+    private static final NumberFormat FORMATADOR_MOEDA =
+            NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
     private final GerenciadorEstacionamento gerenciador;
     private final JTextField campoNome;
@@ -53,7 +58,7 @@ public class TelaCadastroMensalista extends JFrame {
     private final JComboBox<TipoVeiculo> comboTipoVeiculo;
     private final PainelDesenhoVeiculo painelDesenhoVeiculo;
     private final JTextField campoVagaReservada;
-    private final JTextField campoValorMensalidade;
+    private final JLabel labelValorMensalidade;
     private Border bordaCampoPadrao;
 
     public TelaCadastroMensalista() {
@@ -65,7 +70,7 @@ public class TelaCadastroMensalista extends JFrame {
         this.comboTipoVeiculo = new JComboBox<>();
         this.painelDesenhoVeiculo = new PainelDesenhoVeiculo();
         this.campoVagaReservada = new JTextField(8);
-        this.campoValorMensalidade = new JTextField(8);
+        this.labelValorMensalidade = criarLabelMensalidade();
 
         configurarJanela();
         preencherTiposVeiculo();
@@ -121,7 +126,6 @@ public class TelaCadastroMensalista extends JFrame {
         estilizarCampo(campoTelefone);
         estilizarCampo(campoPlaca);
         estilizarCampo(campoVagaReservada);
-        estilizarCampo(campoValorMensalidade);
         comboTipoVeiculo.setFont(FONTE_PADRAO);
         comboTipoVeiculo.setPreferredSize(new Dimension(390, 36));
         comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
@@ -166,11 +170,8 @@ public class TelaCadastroMensalista extends JFrame {
                 painelFormulario,
                 constraints,
                 6,
-                "Mensalidade:",
-                FormularioHelper.criarCampoComAjuda(
-                        campoValorMensalidade,
-                        "Exemplo: 250,00 ou 250.00",
-                        "Informe o valor mensal usando virgula ou ponto para centavos."));
+                "Mensalidade fixa:",
+                criarPainelMensalidadeFixa());
 
         JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
         painelConteudo.setOpaque(false);
@@ -239,6 +240,33 @@ public class TelaCadastroMensalista extends JFrame {
         campo.setBorder(bordaCampoPadrao);
     }
 
+    private JLabel criarLabelMensalidade() {
+        JLabel label = new JLabel(FORMATADOR_MOEDA.format(gerenciador.getValorMensalidadeFixa()));
+        label.setFont(FONTE_PADRAO);
+        label.setForeground(TEXTO_ESCURO);
+        label.setOpaque(true);
+        label.setBackground(FUNDO_CLARO);
+        label.setPreferredSize(new Dimension(390, 36));
+        label.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(LILAS_SUAVE, 1, true),
+                new EmptyBorder(8, 10, 8, 10)));
+        label.setToolTipText("Valor fixo configurado no sistema.");
+        return label;
+    }
+
+    private JPanel criarPainelMensalidadeFixa() {
+        JPanel painel = new JPanel(new BorderLayout(0, 4));
+        painel.setOpaque(false);
+
+        JLabel aviso = new JLabel("Valor fixo definido pelo sistema.");
+        aviso.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        aviso.setForeground(VERMELHO_ALERTA);
+
+        painel.add(labelValorMensalidade, BorderLayout.NORTH);
+        painel.add(aviso, BorderLayout.CENTER);
+        return painel;
+    }
+
     private void estilizarBotao(JButton botao) {
         botao.setFont(FONTE_BOTAO);
         botao.setForeground(Color.WHITE);
@@ -262,7 +290,6 @@ public class TelaCadastroMensalista extends JFrame {
         String idVagaReservada = campoVagaReservada.getText();
 
         try {
-            double valorMensalidade = Double.parseDouble(campoValorMensalidade.getText().replace(',', '.'));
             Mensalista mensalista = new Mensalista(
                     nome,
                     documento,
@@ -270,7 +297,7 @@ public class TelaCadastroMensalista extends JFrame {
                     placa,
                     tipoVeiculo,
                     idVagaReservada,
-                    valorMensalidade);
+                    gerenciador.getValorMensalidadeFixa());
 
             gerenciador.cadastrarMensalista(mensalista);
             JOptionPane.showMessageDialog(
