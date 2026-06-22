@@ -28,6 +28,7 @@ public class GerenciadorEstacionamento {
     private static final int TOTAL_FILEIRAS = 2;
     private static final int VAGAS_POR_FILEIRA = 15;
     private static final char PRIMEIRA_FILEIRA = 'A';
+    private static final double VALOR_MENSALIDADE_FIXA = 250.00;
 
     private final HashMap<String, Vaga> vagas;
     private final ArrayList<Registro> registros;
@@ -44,6 +45,10 @@ public class GerenciadorEstacionamento {
 
     public static synchronized GerenciadorEstacionamento getInstance() {
         return INSTANCE;
+    }
+
+    public double getValorMensalidadeFixa() {
+        return VALOR_MENSALIDADE_FIXA;
     }
 
     public synchronized void carregarDados(DadosParkSys dados) {
@@ -67,6 +72,7 @@ public class GerenciadorEstacionamento {
             mensalistas.addAll(dados.getMensalistas());
         }
 
+        aplicarMensalidadeFixaMensalistas();
         restaurarReservasMensalistas();
     }
 
@@ -233,6 +239,12 @@ public class GerenciadorEstacionamento {
         }
     }
 
+    private void aplicarMensalidadeFixaMensalistas() {
+        for (Mensalista mensalista : mensalistas) {
+            mensalista.setValorMensalidade(VALOR_MENSALIDADE_FIXA);
+        }
+    }
+
     private List<Vaga> buscarVagasConsecutivasPorId(String idVagaInicial, int quantidadeVagas)
             throws VagaOcupadaException {
         ArrayList<Vaga> vagasEncontradas = new ArrayList<>();
@@ -303,6 +315,7 @@ public class GerenciadorEstacionamento {
 
         mensalista.setPlaca(placaNormalizada);
         mensalista.setIdVagaReservada(idVagaReservada);
+        mensalista.setValorMensalidade(VALOR_MENSALIDADE_FIXA);
 
         for (Vaga vagaReservada : vagasParaReservar) {
             vagaReservada.setStatus(StatusVaga.RESERVADA);
