@@ -5,8 +5,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -14,6 +14,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import parksys.entities.Vaga;
 import parksys.enums.StatusVaga;
 
 public class PainelMonitor extends JFrame implements EstacionamentoObserver {
@@ -26,7 +27,7 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private final JTextArea areaStatus;
 
     public PainelMonitor() {
-        this.statusVagas = new HashMap<>();
+        this.statusVagas = new TreeMap<>();
         this.areaStatus = new JTextArea();
 
         configurarJanela();
@@ -49,6 +50,16 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
 
     public Map<String, StatusVaga> getStatusVagas() {
         return Collections.unmodifiableMap(statusVagas);
+    }
+
+    public void carregarStatusAtual(Map<String, Vaga> vagas) {
+        statusVagas.clear();
+
+        for (Map.Entry<String, Vaga> entrada : vagas.entrySet()) {
+            statusVagas.put(entrada.getKey(), entrada.getValue().getStatus());
+        }
+
+        SwingUtilities.invokeLater(() -> atualizarMapaVisual());
     }
 
     private void configurarJanela() {

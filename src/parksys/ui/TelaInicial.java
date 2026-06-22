@@ -48,6 +48,7 @@ public class TelaInicial extends JFrame {
         this.painelMonitor = new PainelMonitor();
 
         carregarDados();
+        painelMonitor.carregarStatusAtual(gerenciador.getVagas());
         gerenciador.addObserver(painelMonitor);
         painelMonitor.setVisible(true);
 
