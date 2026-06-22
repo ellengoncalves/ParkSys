@@ -51,6 +51,7 @@ public class TelaCadastroMensalista extends JFrame {
     private final JTextField campoTelefone;
     private final JTextField campoPlaca;
     private final JComboBox<TipoVeiculo> comboTipoVeiculo;
+    private final PainelDesenhoVeiculo painelDesenhoVeiculo;
     private final JTextField campoVagaReservada;
     private final JTextField campoValorMensalidade;
     private Border bordaCampoPadrao;
@@ -62,6 +63,7 @@ public class TelaCadastroMensalista extends JFrame {
         this.campoTelefone = new JTextField(12);
         this.campoPlaca = new JTextField(12);
         this.comboTipoVeiculo = new JComboBox<>();
+        this.painelDesenhoVeiculo = new PainelDesenhoVeiculo();
         this.campoVagaReservada = new JTextField(8);
         this.campoValorMensalidade = new JTextField(8);
 
@@ -73,8 +75,8 @@ public class TelaCadastroMensalista extends JFrame {
     private void configurarJanela() {
         setTitle("Cadastro de Mensalista");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setMinimumSize(new Dimension(780, 620));
-        setSize(820, 660);
+        setMinimumSize(new Dimension(960, 620));
+        setSize(1020, 660);
         setLocationRelativeTo(null);
 
         addWindowListener(new WindowAdapter() {
@@ -122,6 +124,8 @@ public class TelaCadastroMensalista extends JFrame {
         estilizarCampo(campoValorMensalidade);
         comboTipoVeiculo.setFont(FONTE_PADRAO);
         comboTipoVeiculo.setPreferredSize(new Dimension(390, 36));
+        comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
+        atualizarDesenhoVeiculo();
 
         adicionarCampo(painelFormulario, constraints, 0, "Nome:", campoNome);
         adicionarCampo(painelFormulario, constraints, 1, "Documento:", campoDocumento);
@@ -136,6 +140,11 @@ public class TelaCadastroMensalista extends JFrame {
         adicionarCampo(painelFormulario, constraints, 5, "Vaga reservada:", campoVagaReservada);
         adicionarCampo(painelFormulario, constraints, 6, "Mensalidade:", campoValorMensalidade);
 
+        JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
+        painelConteudo.setOpaque(false);
+        painelConteudo.add(painelFormulario, BorderLayout.CENTER);
+        painelConteudo.add(painelDesenhoVeiculo, BorderLayout.EAST);
+
         JButton botaoCadastrar = new JButton("Cadastrar");
         estilizarBotao(botaoCadastrar);
         botaoCadastrar.addActionListener(event -> cadastrarMensalista());
@@ -145,7 +154,7 @@ public class TelaCadastroMensalista extends JFrame {
         painelBotoes.add(botaoCadastrar);
 
         painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
-        painelPrincipal.add(painelFormulario, BorderLayout.CENTER);
+        painelPrincipal.add(painelConteudo, BorderLayout.CENTER);
         painelPrincipal.add(painelBotoes, BorderLayout.SOUTH);
         add(painelPrincipal, BorderLayout.CENTER);
     }
@@ -206,6 +215,10 @@ public class TelaCadastroMensalista extends JFrame {
         botao.setFocusPainted(false);
         botao.setBorder(new EmptyBorder(12, 24, 12, 24));
         botao.setPreferredSize(new Dimension(160, 44));
+    }
+
+    private void atualizarDesenhoVeiculo() {
+        painelDesenhoVeiculo.setTipoVeiculo((TipoVeiculo) comboTipoVeiculo.getSelectedItem());
     }
 
     private void cadastrarMensalista() {
