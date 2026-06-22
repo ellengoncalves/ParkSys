@@ -19,6 +19,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -43,6 +44,7 @@ public class TelaSaida extends JFrame {
 
     private final GerenciadorEstacionamento gerenciador;
     private final JTextField campoPlaca;
+    private Border bordaCampoPadrao;
 
     public TelaSaida() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
@@ -91,7 +93,12 @@ public class TelaSaida extends JFrame {
         constraints.fill = GridBagConstraints.HORIZONTAL;
 
         estilizarCampo(campoPlaca);
-        adicionarCampo(painelFormulario, constraints, 0, "Placa:", campoPlaca);
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                0,
+                "Placa:",
+                FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
 
         JButton botaoRegistrar = new JButton("Registrar Sa\u00edda");
         estilizarBotao(botaoRegistrar);
@@ -149,9 +156,10 @@ public class TelaSaida extends JFrame {
         campo.setFont(FONTE_PADRAO);
         campo.setForeground(TEXTO_ESCURO);
         campo.setPreferredSize(new Dimension(360, 36));
-        campo.setBorder(BorderFactory.createCompoundBorder(
+        bordaCampoPadrao = BorderFactory.createCompoundBorder(
                 new LineBorder(LILAS_SUAVE, 1, true),
-                new EmptyBorder(8, 10, 8, 10)));
+                new EmptyBorder(8, 10, 8, 10));
+        campo.setBorder(bordaCampoPadrao);
     }
 
     private void estilizarBotao(JButton botao) {

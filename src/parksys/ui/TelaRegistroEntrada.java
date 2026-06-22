@@ -20,6 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -46,6 +47,7 @@ public class TelaRegistroEntrada extends JFrame {
     private final JTextField campoPlaca;
     private final JTextField campoVaga;
     private final JComboBox<TipoVeiculo> comboTipoVeiculo;
+    private Border bordaCampoPadrao;
 
     public TelaRegistroEntrada() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
@@ -107,7 +109,12 @@ public class TelaRegistroEntrada extends JFrame {
         comboTipoVeiculo.setFont(FONTE_PADRAO);
         comboTipoVeiculo.setPreferredSize(new Dimension(360, 36));
 
-        adicionarCampo(painelFormulario, constraints, 0, "Placa:", campoPlaca);
+        adicionarCampo(
+                painelFormulario,
+                constraints,
+                0,
+                "Placa:",
+                FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
         adicionarCampo(painelFormulario, constraints, 1, "Tipo de ve\u00edculo:", comboTipoVeiculo);
         adicionarCampo(painelFormulario, constraints, 2, "Vaga desejada:", campoVaga);
 
@@ -167,9 +174,10 @@ public class TelaRegistroEntrada extends JFrame {
         campo.setFont(FONTE_PADRAO);
         campo.setForeground(TEXTO_ESCURO);
         campo.setPreferredSize(new Dimension(360, 36));
-        campo.setBorder(BorderFactory.createCompoundBorder(
+        bordaCampoPadrao = BorderFactory.createCompoundBorder(
                 new LineBorder(LILAS_SUAVE, 1, true),
-                new EmptyBorder(8, 10, 8, 10)));
+                new EmptyBorder(8, 10, 8, 10));
+        campo.setBorder(bordaCampoPadrao);
     }
 
     private void estilizarBotao(JButton botao) {
