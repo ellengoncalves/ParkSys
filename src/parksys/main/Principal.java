@@ -6,6 +6,7 @@ import parksys.entities.Registro;
 import parksys.enums.TipoVeiculo;
 import parksys.services.EntradaRunnable;
 import parksys.services.GerenciadorEstacionamento;
+import parksys.services.MonitorRunnable;
 import parksys.ui.TelaInicial;
 
 public class Principal {
@@ -16,12 +17,16 @@ public class Principal {
 
     private static void executarDemonstracaoThreads() {
         GerenciadorEstacionamento gerenciador = GerenciadorEstacionamento.getInstance();
+        Thread monitorThread = new Thread(new MonitorRunnable(gerenciador), "Monitor-Vagas");
         Thread[] threadsEntrada = {
                 new Thread(new EntradaRunnable("ABC1234", TipoVeiculo.CARRO, "A01", gerenciador), "Entrada-Carro"),
                 new Thread(new EntradaRunnable("DEF5678", TipoVeiculo.MOTO, "A02", gerenciador), "Entrada-Moto"),
                 new Thread(new EntradaRunnable("GHI1J23", TipoVeiculo.SUV, "A03", gerenciador), "Entrada-SUV"),
                 new Thread(new EntradaRunnable("JKL4M56", TipoVeiculo.CAMINHAO, "A05", gerenciador), "Entrada-Caminhao")
         };
+
+        monitorThread.setDaemon(true);
+        monitorThread.start();
 
         for (Thread threadEntrada : threadsEntrada) {
             threadEntrada.start();
@@ -33,10 +38,12 @@ public class Principal {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 interromperThreads(threadsEntrada);
+                monitorThread.interrupt();
                 return;
             }
         }
 
+        monitorThread.interrupt();
         exibirRelatorioFinal(gerenciador);
     }
 
