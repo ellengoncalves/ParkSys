@@ -42,7 +42,7 @@ public class GerenciadorEstacionamento {
         inicializarVagas();
     }
 
-    public static GerenciadorEstacionamento getInstance() {
+    public static synchronized GerenciadorEstacionamento getInstance() {
         return INSTANCE;
     }
 
