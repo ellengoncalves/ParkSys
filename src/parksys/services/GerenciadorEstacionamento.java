@@ -66,6 +66,8 @@ public class GerenciadorEstacionamento {
         if (dados.getMensalistas() != null) {
             mensalistas.addAll(dados.getMensalistas());
         }
+
+        restaurarReservasMensalistas();
     }
 
     private void inicializarVagas() {
@@ -214,6 +216,50 @@ public class GerenciadorEstacionamento {
         return idNormalizado;
     }
 
+    private void restaurarReservasMensalistas() {
+        for (Mensalista mensalista : mensalistas) {
+            try {
+                List<Vaga> vagasReservadas = buscarVagasConsecutivasPorId(
+                        mensalista.getIdVagaReservada(),
+                        mensalista.getTipoVeiculo().getVagasOcupadas());
+
+                for (Vaga vagaReservada : vagasReservadas) {
+                    vagaReservada.setStatus(StatusVaga.RESERVADA);
+                    vagaReservada.setVeiculoAtual(null);
+                }
+            } catch (VagaOcupadaException e) {
+                System.out.println("Reserva de mensalista nao restaurada: " + e.getMessage());
+            }
+        }
+    }
+
+    private List<Vaga> buscarVagasConsecutivasPorId(String idVagaInicial, int quantidadeVagas)
+            throws VagaOcupadaException {
+        ArrayList<Vaga> vagasEncontradas = new ArrayList<>();
+        String idNormalizado = normalizarIdVaga(idVagaInicial);
+        char fileira = idNormalizado.charAt(0);
+        int numeroInicial = Integer.parseInt(idNormalizado.substring(1));
+
+        for (int deslocamento = 0; deslocamento < quantidadeVagas; deslocamento++) {
+            int numeroAtual = numeroInicial + deslocamento;
+
+            if (numeroAtual > VAGAS_POR_FILEIRA) {
+                throw new VagaOcupadaException("Nao ha vagas consecutivas suficientes na fileira " + fileira);
+            }
+
+            String idVagaAtual = String.format("%c%02d", fileira, numeroAtual);
+            Vaga vagaAtual = vagas.get(idVagaAtual);
+
+            if (vagaAtual == null) {
+                throw new VagaOcupadaException("Vaga nao encontrada: " + idVagaAtual);
+            }
+
+            vagasEncontradas.add(vagaAtual);
+        }
+
+        return vagasEncontradas;
+    }
+
     private synchronized void liberarVagasDoVeiculo(String placa) {
         for (Vaga vaga : vagas.values()) {
             Veiculo veiculoAtual = vaga.getVeiculoAtual();
@@ -251,21 +297,18 @@ public class GerenciadorEstacionamento {
             throws PlacaInvalidaException, VagaOcupadaException {
         String placaNormalizada = normalizarPlaca(mensalista.getPlaca());
         String idVagaReservada = normalizarIdVaga(mensalista.getIdVagaReservada());
-        Vaga vagaReservada = vagas.get(idVagaReservada);
-
-        if (vagaReservada == null) {
-            throw new VagaOcupadaException("Vaga nao encontrada: " + idVagaReservada);
-        }
-
-        if (!vagaReservada.getStatus().isDisponivel()) {
-            throw new VagaOcupadaException("Vaga indisponivel para reserva: " + idVagaReservada);
-        }
+        List<Vaga> vagasParaReservar = buscarVagasConsecutivasDisponiveis(
+                idVagaReservada,
+                mensalista.getTipoVeiculo().getVagasOcupadas());
 
         mensalista.setPlaca(placaNormalizada);
         mensalista.setIdVagaReservada(idVagaReservada);
-        vagaReservada.setStatus(StatusVaga.RESERVADA);
-        vagaReservada.setVeiculoAtual(null);
-        notificarObservadores(idVagaReservada, StatusVaga.RESERVADA);
+
+        for (Vaga vagaReservada : vagasParaReservar) {
+            vagaReservada.setStatus(StatusVaga.RESERVADA);
+            vagaReservada.setVeiculoAtual(null);
+            notificarObservadores(vagaReservada.getId(), StatusVaga.RESERVADA);
+        }
 
         // LinkedList eh adequada aqui porque o cadastro de mensalistas pode ter
         // insercoes no fim e remocoes no inicio com frequencia, operacoes que

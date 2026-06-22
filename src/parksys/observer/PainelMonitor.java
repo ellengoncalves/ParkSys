@@ -2,6 +2,7 @@ package parksys.observer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.util.Collections;
@@ -9,10 +10,18 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.BorderFactory;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.JLabel;
+import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import parksys.entities.Vaga;
 import parksys.enums.StatusVaga;
@@ -20,8 +29,18 @@ import parksys.enums.StatusVaga;
 public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private static final long serialVersionUID = 1L;
     private static final Color FUNDO_CLARO = new Color(250, 247, 251);
+    private static final Color BRANCO = Color.WHITE;
     private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
+    private static final Color TEXTO_SECUNDARIO = new Color(92, 82, 101);
     private static final Color ROXO_FECHADO = new Color(94, 58, 135);
+    private static final Color LILAS_SUAVE = new Color(237, 231, 246);
+    private static final Color LILAS_CLARO = new Color(247, 243, 251);
+    private static final Color VERDE_STATUS = new Color(45, 128, 91);
+    private static final Color VERMELHO_STATUS = new Color(181, 82, 92);
+    private static final Color AMARELO_STATUS = new Color(150, 112, 34);
+    private static final Color SELECAO = new Color(237, 231, 246);
+    private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 20);
+    private static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 13);
     private static final Font FONTE_TABELA = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font FONTE_CABECALHO = new Font("Segoe UI", Font.BOLD, 14);
 
@@ -69,23 +88,53 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private void configurarJanela() {
         setTitle("Monitor de Vagas");
         setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-        setMinimumSize(new Dimension(360, 420));
-        setSize(420, 520);
+        setMinimumSize(new Dimension(420, 480));
+        setSize(480, 560);
         setLocationByPlatform(true);
     }
 
     private void montarComponentes() {
+        JPanel painelPrincipal = new JPanel(new BorderLayout(0, 16));
+        painelPrincipal.setBackground(FUNDO_CLARO);
+        painelPrincipal.setBorder(new EmptyBorder(24, 24, 24, 24));
+
+        JPanel painelCabecalho = criarCabecalho();
+
         tabelaVagas.setFont(FONTE_TABELA);
         tabelaVagas.setForeground(TEXTO_ESCURO);
-        tabelaVagas.setBackground(FUNDO_CLARO);
-        tabelaVagas.setRowHeight(28);
+        tabelaVagas.setBackground(BRANCO);
+        tabelaVagas.setGridColor(LILAS_SUAVE);
+        tabelaVagas.setRowHeight(32);
         tabelaVagas.setFillsViewportHeight(true);
+        tabelaVagas.setCellSelectionEnabled(true);
+        tabelaVagas.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        tabelaVagas.setSelectionBackground(SELECAO);
+        tabelaVagas.setSelectionForeground(TEXTO_ESCURO);
+        tabelaVagas.setShowVerticalLines(false);
+        tabelaVagas.setIntercellSpacing(new Dimension(0, 1));
+        tabelaVagas.setDefaultRenderer(Object.class, new MonitorTableCellRenderer());
+        tabelaVagas.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        tabelaVagas.getColumnModel().getColumn(0).setPreferredWidth(160);
+        tabelaVagas.getColumnModel().getColumn(1).setPreferredWidth(160);
         tabelaVagas.getTableHeader().setFont(FONTE_CABECALHO);
-        tabelaVagas.getTableHeader().setForeground(ROXO_FECHADO);
+        tabelaVagas.getTableHeader().setForeground(BRANCO);
+        tabelaVagas.getTableHeader().setBackground(ROXO_FECHADO);
         tabelaVagas.getTableHeader().setReorderingAllowed(false);
+        tabelaVagas.getTableHeader().setPreferredSize(new Dimension(0, 34));
 
         JScrollPane painelRolagem = new JScrollPane(tabelaVagas);
-        add(painelRolagem, BorderLayout.CENTER);
+        painelRolagem.getViewport().setBackground(BRANCO);
+        painelRolagem.setBorder(BorderFactory.createTitledBorder(
+                new LineBorder(LILAS_SUAVE, 1, true),
+                "Status atual das vagas",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                FONTE_CABECALHO,
+                ROXO_FECHADO));
+
+        painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
+        painelPrincipal.add(painelRolagem, BorderLayout.CENTER);
+        add(painelPrincipal, BorderLayout.CENTER);
         atualizarMapaVisual();
     }
 
@@ -111,5 +160,62 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
                 return false;
             }
         };
+    }
+
+    private JPanel criarCabecalho() {
+        JPanel painelCabecalho = new JPanel(new BorderLayout(0, 4));
+        painelCabecalho.setBackground(FUNDO_CLARO);
+
+        JLabel titulo = new JLabel("Monitor de Vagas");
+        titulo.setFont(FONTE_TITULO);
+        titulo.setForeground(ROXO_FECHADO);
+
+        JLabel subtitulo = new JLabel("Acompanhe a situacao atual de cada vaga do estacionamento.");
+        subtitulo.setFont(FONTE_SUBTITULO);
+        subtitulo.setForeground(TEXTO_SECUNDARIO);
+
+        painelCabecalho.add(titulo, BorderLayout.NORTH);
+        painelCabecalho.add(subtitulo, BorderLayout.CENTER);
+        return painelCabecalho;
+    }
+
+    private static class MonitorTableCellRenderer extends DefaultTableCellRenderer {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTableCellRendererComponent(
+                JTable table,
+                Object value,
+                boolean isSelected,
+                boolean hasFocus,
+                int row,
+                int column) {
+            Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setBorder(new EmptyBorder(0, 12, 0, 12));
+            setHorizontalAlignment(CENTER);
+
+            if (!isSelected) {
+                component.setBackground(row % 2 == 0 ? BRANCO : LILAS_CLARO);
+                component.setForeground(column == 1 ? corStatus(String.valueOf(value)) : TEXTO_ESCURO);
+            }
+
+            return component;
+        }
+
+        private Color corStatus(String status) {
+            if ("Livre".equalsIgnoreCase(status)) {
+                return VERDE_STATUS;
+            }
+
+            if ("Ocupada".equalsIgnoreCase(status)) {
+                return VERMELHO_STATUS;
+            }
+
+            if ("Reservada".equalsIgnoreCase(status)) {
+                return AMARELO_STATUS;
+            }
+
+            return TEXTO_ESCURO;
+        }
     }
 }
