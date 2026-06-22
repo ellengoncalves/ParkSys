@@ -10,9 +10,9 @@ import java.util.TreeMap;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+import javax.swing.JTable;
 import javax.swing.SwingUtilities;
-import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 
 import parksys.entities.Vaga;
 import parksys.enums.StatusVaga;
@@ -21,14 +21,18 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private static final long serialVersionUID = 1L;
     private static final Color FUNDO_CLARO = new Color(250, 247, 251);
     private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
-    private static final Font FONTE_MONITOR = new Font("Consolas", Font.PLAIN, 13);
+    private static final Color ROXO_FECHADO = new Color(94, 58, 135);
+    private static final Font FONTE_TABELA = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font FONTE_CABECALHO = new Font("Segoe UI", Font.BOLD, 14);
 
     private final Map<String, StatusVaga> statusVagas;
-    private final JTextArea areaStatus;
+    private final DefaultTableModel modeloTabela;
+    private final JTable tabelaVagas;
 
     public PainelMonitor() {
         this.statusVagas = new TreeMap<>();
-        this.areaStatus = new JTextArea();
+        this.modeloTabela = criarModeloTabela();
+        this.tabelaVagas = new JTable(modeloTabela);
 
         configurarJanela();
         montarComponentes();
@@ -71,34 +75,41 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     }
 
     private void montarComponentes() {
-        areaStatus.setEditable(false);
-        areaStatus.setFont(FONTE_MONITOR);
-        areaStatus.setForeground(TEXTO_ESCURO);
-        areaStatus.setBackground(FUNDO_CLARO);
-        areaStatus.setBorder(new EmptyBorder(14, 14, 14, 14));
+        tabelaVagas.setFont(FONTE_TABELA);
+        tabelaVagas.setForeground(TEXTO_ESCURO);
+        tabelaVagas.setBackground(FUNDO_CLARO);
+        tabelaVagas.setRowHeight(28);
+        tabelaVagas.setFillsViewportHeight(true);
+        tabelaVagas.getTableHeader().setFont(FONTE_CABECALHO);
+        tabelaVagas.getTableHeader().setForeground(ROXO_FECHADO);
+        tabelaVagas.getTableHeader().setReorderingAllowed(false);
 
-        JScrollPane painelRolagem = new JScrollPane(areaStatus);
+        JScrollPane painelRolagem = new JScrollPane(tabelaVagas);
         add(painelRolagem, BorderLayout.CENTER);
         atualizarMapaVisual();
     }
 
     private void atualizarMapaVisual() {
-        StringBuilder mapa = new StringBuilder();
-        mapa.append("STATUS ATUAL DAS VAGAS").append(System.lineSeparator());
-        mapa.append("=======================").append(System.lineSeparator()).append(System.lineSeparator());
+        modeloTabela.setRowCount(0);
 
         if (statusVagas.isEmpty()) {
-            mapa.append("Nenhuma alteracao registrada ainda.").append(System.lineSeparator());
-        } else {
-            for (Map.Entry<String, StatusVaga> entrada : statusVagas.entrySet()) {
-                mapa.append(entrada.getKey())
-                        .append(" -> ")
-                        .append(entrada.getValue().getDescricao())
-                        .append(System.lineSeparator());
-            }
+            modeloTabela.addRow(new Object[] {"-", "Nenhuma alteracao registrada ainda"});
+            return;
         }
 
-        areaStatus.setText(mapa.toString());
-        areaStatus.setCaretPosition(0);
+        for (Map.Entry<String, StatusVaga> entrada : statusVagas.entrySet()) {
+            modeloTabela.addRow(new Object[] {entrada.getKey(), entrada.getValue().getDescricao()});
+        }
+    }
+
+    private DefaultTableModel criarModeloTabela() {
+        return new DefaultTableModel(new Object[] {"Vaga", "Status"}, 0) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
     }
 }
