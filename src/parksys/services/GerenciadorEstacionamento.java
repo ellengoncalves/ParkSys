@@ -247,14 +247,33 @@ public class GerenciadorEstacionamento {
         return registrosOrdenados;
     }
 
-    public void cadastrarMensalista(Mensalista mensalista) {
+    public synchronized void cadastrarMensalista(Mensalista mensalista)
+            throws PlacaInvalidaException, VagaOcupadaException {
+        String placaNormalizada = normalizarPlaca(mensalista.getPlaca());
+        String idVagaReservada = normalizarIdVaga(mensalista.getIdVagaReservada());
+        Vaga vagaReservada = vagas.get(idVagaReservada);
+
+        if (vagaReservada == null) {
+            throw new VagaOcupadaException("Vaga nao encontrada: " + idVagaReservada);
+        }
+
+        if (!vagaReservada.getStatus().isDisponivel()) {
+            throw new VagaOcupadaException("Vaga indisponivel para reserva: " + idVagaReservada);
+        }
+
+        mensalista.setPlaca(placaNormalizada);
+        mensalista.setIdVagaReservada(idVagaReservada);
+        vagaReservada.setStatus(StatusVaga.RESERVADA);
+        vagaReservada.setVeiculoAtual(null);
+        notificarObservadores(idVagaReservada, StatusVaga.RESERVADA);
+
         // LinkedList eh adequada aqui porque o cadastro de mensalistas pode ter
         // insercoes no fim e remocoes no inicio com frequencia, operacoes que
         // nao exigem deslocar os demais elementos da lista
         mensalistas.addLast(mensalista);
     }
 
-    public Mensalista removerPrimeiroMensalista() {
+    public synchronized Mensalista removerPrimeiroMensalista() {
         if (mensalistas.isEmpty()) {
             return null;
         }
@@ -262,7 +281,7 @@ public class GerenciadorEstacionamento {
         return mensalistas.removeFirst();
     }
 
-    public List<Mensalista> getMensalistas() {
-        return Collections.unmodifiableList(mensalistas);
+    public synchronized List<Mensalista> getMensalistas() {
+        return Collections.unmodifiableList(new LinkedList<>(mensalistas));
     }
 }
