@@ -45,6 +45,9 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private static final Color VERDE_STATUS = new Color(45, 128, 91);
     private static final Color VERMELHO_STATUS = new Color(181, 82, 92);
     private static final Color AMARELO_STATUS = new Color(150, 112, 34);
+    private static final Color VERDE_CLARO = new Color(232, 246, 239);
+    private static final Color VERMELHO_CLARO = new Color(251, 235, 238);
+    private static final Color AMARELO_CLARO = new Color(252, 244, 224);
     private static final Color SELECAO = new Color(237, 231, 246);
     private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 20);
     private static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 13);
@@ -161,10 +164,7 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
 
         painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
         painelPrincipal.add(painelRolagem, BorderLayout.CENTER);
-
-        if (aoSelecionarVaga != null) {
-            painelPrincipal.add(criarPainelAcoes(), BorderLayout.SOUTH);
-        }
+        painelPrincipal.add(criarRodape(), BorderLayout.SOUTH);
 
         add(painelPrincipal, BorderLayout.CENTER);
         atualizarMapaVisual();
@@ -202,13 +202,55 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
         titulo.setFont(FONTE_TITULO);
         titulo.setForeground(ROXO_FECHADO);
 
-        JLabel subtitulo = new JLabel("Acompanhe a situacao atual de cada vaga do estacionamento.");
+        String textoSubtitulo = aoSelecionarVaga == null
+                ? "Acompanhe a situacao atual de cada vaga do estacionamento."
+                : "Use duplo clique ou o botao para escolher uma vaga permitida.";
+        JLabel subtitulo = new JLabel(textoSubtitulo);
         subtitulo.setFont(FONTE_SUBTITULO);
         subtitulo.setForeground(TEXTO_SECUNDARIO);
 
         painelCabecalho.add(titulo, BorderLayout.NORTH);
         painelCabecalho.add(subtitulo, BorderLayout.CENTER);
         return painelCabecalho;
+    }
+
+    private JPanel criarRodape() {
+        JPanel rodape = new JPanel(new BorderLayout(12, 0));
+        rodape.setBackground(FUNDO_CLARO);
+        rodape.add(criarLegenda(), BorderLayout.WEST);
+
+        if (aoSelecionarVaga != null) {
+            rodape.add(criarPainelAcoes(), BorderLayout.EAST);
+        }
+
+        return rodape;
+    }
+
+    private JPanel criarLegenda() {
+        JPanel legenda = new JPanel(new FlowLayout(FlowLayout.LEFT, 12, 0));
+        legenda.setBackground(FUNDO_CLARO);
+        legenda.add(criarItemLegenda("Livre", VERDE_STATUS));
+        legenda.add(criarItemLegenda("Ocupada", VERMELHO_STATUS));
+        legenda.add(criarItemLegenda("Reservada", AMARELO_STATUS));
+        return legenda;
+    }
+
+    private JPanel criarItemLegenda(String texto, Color cor) {
+        JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        item.setBackground(FUNDO_CLARO);
+
+        JLabel marcador = new JLabel(" ");
+        marcador.setOpaque(true);
+        marcador.setBackground(cor);
+        marcador.setPreferredSize(new Dimension(14, 14));
+
+        JLabel label = new JLabel(texto);
+        label.setFont(FONTE_SUBTITULO);
+        label.setForeground(TEXTO_SECUNDARIO);
+
+        item.add(marcador);
+        item.add(label);
+        return item;
     }
 
     private JPanel criarPainelAcoes() {
@@ -284,6 +326,11 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
             if (!isSelected) {
                 component.setBackground(row % 2 == 0 ? BRANCO : LILAS_CLARO);
                 component.setForeground(column == 1 ? corStatus(String.valueOf(value)) : TEXTO_ESCURO);
+                setFont(column == 1 ? FONTE_CABECALHO : FONTE_TABELA);
+
+                if (column == 1) {
+                    component.setBackground(corFundoStatus(String.valueOf(value)));
+                }
             }
 
             return component;
@@ -303,6 +350,22 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
             }
 
             return TEXTO_ESCURO;
+        }
+
+        private Color corFundoStatus(String status) {
+            if ("Livre".equalsIgnoreCase(status)) {
+                return VERDE_CLARO;
+            }
+
+            if ("Ocupada".equalsIgnoreCase(status)) {
+                return VERMELHO_CLARO;
+            }
+
+            if ("Reservada".equalsIgnoreCase(status)) {
+                return AMARELO_CLARO;
+            }
+
+            return BRANCO;
         }
     }
 }

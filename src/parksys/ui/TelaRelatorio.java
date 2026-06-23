@@ -56,6 +56,9 @@ public class TelaRelatorio extends JFrame {
     private static final Color VERDE_STATUS = new Color(45, 128, 91);
     private static final Color VERMELHO_STATUS = new Color(181, 82, 92);
     private static final Color AMARELO_STATUS = new Color(150, 112, 34);
+    private static final Color VERDE_CLARO = new Color(232, 246, 239);
+    private static final Color VERMELHO_CLARO = new Color(251, 235, 238);
+    private static final Color AMARELO_CLARO = new Color(252, 244, 224);
     private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
     private static final Color TEXTO_SECUNDARIO = new Color(92, 82, 101);
     private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 24);
@@ -521,9 +524,21 @@ public class TelaRelatorio extends JFrame {
             if (!isSelected) {
                 component.setBackground(row % 2 == 0 ? BRANCO : LILAS_CLARO);
                 component.setForeground(corStatus(String.valueOf(value)));
+                setFont(FONTE_TABELA);
+
+                if (isStatus(String.valueOf(value))) {
+                    component.setBackground(corFundoStatus(String.valueOf(value)));
+                    setFont(FONTE_LABEL);
+                }
             }
 
             return component;
+        }
+
+        private boolean isStatus(String valor) {
+            return "[EM ABERTO]".equalsIgnoreCase(valor)
+                    || "[RESERVADO]".equalsIgnoreCase(valor)
+                    || "[FINALIZADO]".equalsIgnoreCase(valor);
         }
 
         private Color corStatus(String valor) {
@@ -540,6 +555,22 @@ public class TelaRelatorio extends JFrame {
             }
 
             return TEXTO_ESCURO;
+        }
+
+        private Color corFundoStatus(String valor) {
+            if ("[EM ABERTO]".equalsIgnoreCase(valor)) {
+                return VERDE_CLARO;
+            }
+
+            if ("[RESERVADO]".equalsIgnoreCase(valor)) {
+                return AMARELO_CLARO;
+            }
+
+            if ("[FINALIZADO]".equalsIgnoreCase(valor)) {
+                return VERMELHO_CLARO;
+            }
+
+            return BRANCO;
         }
     }
 
