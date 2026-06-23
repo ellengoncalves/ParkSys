@@ -3,12 +3,10 @@ package parksys.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -20,6 +18,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import parksys.entities.Vaga;
+import parksys.enums.StatusVaga;
 import parksys.observer.PainelMonitor;
 import parksys.services.DadosParkSys;
 import parksys.services.GerenciadorArquivo;
@@ -31,15 +31,18 @@ public class TelaInicial extends JFrame {
     private static final String CAMINHO_DADOS = "dados/parksys.ser";
     private static final Color ROXO_FECHADO = new Color(94, 58, 135);
     private static final Color LILAS_SUAVE = new Color(237, 231, 246);
-    private static final Color LILAS_CLARO = new Color(247, 243, 251);
     private static final Color ROSA_QUEIMADO = new Color(181, 101, 118);
     private static final Color FUNDO_CLARO = new Color(250, 247, 251);
-    private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
+    private static final Color BRANCO = Color.WHITE;
+    private static final Color VERDE_STATUS = new Color(45, 128, 91);
+    private static final Color VERMELHO_STATUS = new Color(181, 82, 92);
+    private static final Color AMARELO_STATUS = new Color(150, 112, 34);
     private static final Color TEXTO_SECUNDARIO = new Color(92, 82, 101);
     private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 38);
     private static final Font FONTE_SUBTITULO = new Font("Segoe UI", Font.PLAIN, 17);
-    private static final Font FONTE_SECAO = new Font("Segoe UI", Font.BOLD, 18);
     private static final Font FONTE_BOTAO = new Font("Segoe UI", Font.BOLD, 16);
+    private static final Font FONTE_CARD_NUMERO = new Font("Segoe UI", Font.BOLD, 26);
+    private static final Font FONTE_CARD_TITULO = new Font("Segoe UI", Font.BOLD, 13);
 
     private final GerenciadorEstacionamento gerenciador;
     private final PainelMonitor painelMonitor;
@@ -62,8 +65,8 @@ public class TelaInicial extends JFrame {
     private void configurarJanela() {
         setTitle("ParkSys");
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        setMinimumSize(new Dimension(760, 520));
-        setSize(900, 600);
+        setMinimumSize(new Dimension(840, 540));
+        setSize(920, 590);
         setLocationRelativeTo(null);
 
         addWindowListener(new WindowAdapter() {
@@ -75,15 +78,15 @@ public class TelaInicial extends JFrame {
     }
 
     private void montarComponentes() {
-        JPanel painelPrincipal = new JPanel(new BorderLayout(0, 26));
+        JPanel painelPrincipal = new JPanel(new BorderLayout(0, 18));
         painelPrincipal.setBackground(FUNDO_CLARO);
-        painelPrincipal.setBorder(new EmptyBorder(42, 56, 42, 56));
+        painelPrincipal.setBorder(new EmptyBorder(30, 44, 30, 44));
 
         JLabel titulo = new JLabel("ParkSys", SwingConstants.CENTER);
         titulo.setFont(FONTE_TITULO);
         titulo.setForeground(ROXO_FECHADO);
 
-        JLabel subtitulo = new JLabel("Sistema de Gest\u00e3o de Estacionamento", SwingConstants.CENTER);
+        JLabel subtitulo = new JLabel("Sistema de gest\u00e3o de estacionamento", SwingConstants.CENTER);
         subtitulo.setFont(FONTE_SUBTITULO);
         subtitulo.setForeground(TEXTO_SECUNDARIO);
 
@@ -92,55 +95,102 @@ public class TelaInicial extends JFrame {
         painelCabecalho.add(titulo);
         painelCabecalho.add(subtitulo);
 
-        JLabel tituloAcoes = new JLabel("Opera\u00e7\u00f5es", SwingConstants.LEFT);
-        tituloAcoes.setFont(FONTE_SECAO);
-        tituloAcoes.setForeground(TEXTO_ESCURO);
+        JPanel painelCentral = new JPanel(new GridBagLayout());
+        painelCentral.setBackground(LILAS_SUAVE);
+        painelCentral.setBorder(new EmptyBorder(18, 20, 18, 20));
 
-        JButton botaoEntrada = new JButton("Registrar Entrada");
+        JPanel painelConteudo = new JPanel(new BorderLayout(0, 16));
+        painelConteudo.setOpaque(false);
+        painelConteudo.add(criarPainelResumoVagas(), BorderLayout.NORTH);
+        painelConteudo.add(criarPainelOperacoes(), BorderLayout.CENTER);
+
+        GridBagConstraints restricoesConteudo = new GridBagConstraints();
+        restricoesConteudo.gridx = 0;
+        restricoesConteudo.gridy = 0;
+        restricoesConteudo.weightx = 1.0;
+        restricoesConteudo.fill = GridBagConstraints.HORIZONTAL;
+        painelCentral.add(painelConteudo, restricoesConteudo);
+
+        painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
+        painelPrincipal.add(painelCentral, BorderLayout.CENTER);
+        add(painelPrincipal, BorderLayout.CENTER);
+    }
+
+    private JPanel criarPainelOperacoes() {
+        JButton botaoEntrada = new JButton("Registrar entrada");
         estilizarBotao(botaoEntrada, ROXO_FECHADO);
         botaoEntrada.addActionListener(event -> abrirTelaRegistroEntrada());
 
-        JButton botaoSaida = new JButton("Registrar Sa\u00edda");
+        JButton botaoSaida = new JButton("Registrar sa\u00edda");
         estilizarBotao(botaoSaida, ROXO_FECHADO);
         botaoSaida.addActionListener(event -> abrirTelaSaida());
 
-        JButton botaoCadastroMensalista = new JButton("Cadastro de Mensalista");
+        JButton botaoCadastroMensalista = new JButton("Cadastro de mensalista");
         estilizarBotao(botaoCadastroMensalista, ROSA_QUEIMADO);
         botaoCadastroMensalista.addActionListener(event -> abrirTelaCadastroMensalista());
 
-        JButton botaoRelatorio = new JButton("Ver Relat\u00f3rio");
+        JButton botaoRelatorio = new JButton("Ver relat\u00f3rio");
         estilizarBotao(botaoRelatorio, ROSA_QUEIMADO);
         botaoRelatorio.addActionListener(event -> abrirTelaRelatorio());
 
-        JPanel painelBotoes = new JPanel(new GridLayout(2, 2, 18, 18));
-        painelBotoes.setBackground(Color.WHITE);
+        JPanel painelBotoes = new JPanel(new GridLayout(2, 2, 12, 12));
+        painelBotoes.setBackground(BRANCO);
+        painelBotoes.setPreferredSize(new Dimension(0, 118));
         painelBotoes.add(botaoEntrada);
         painelBotoes.add(botaoSaida);
         painelBotoes.add(botaoCadastroMensalista);
         painelBotoes.add(botaoRelatorio);
 
         JPanel painelCartao = new JPanel(new BorderLayout(0, 18));
-        painelCartao.setBackground(Color.WHITE);
+        painelCartao.setBackground(BRANCO);
         painelCartao.setBorder(new EmptyBorder(30, 34, 34, 34));
-        painelCartao.add(tituloAcoes, BorderLayout.NORTH);
-        painelCartao.add(painelBotoes, BorderLayout.CENTER);
+        painelCartao.add(painelBotoes, BorderLayout.NORTH);
+        return painelCartao;
+    }
 
-        JPanel painelCentral = new JPanel(new GridBagLayout());
-        painelCentral.setBackground(LILAS_SUAVE);
-        painelCentral.setBorder(new EmptyBorder(34, 34, 34, 34));
+    private JPanel criarPainelResumoVagas() {
+        int livres = contarVagas(StatusVaga.LIVRE);
+        int ocupadas = contarVagas(StatusVaga.OCUPADA);
+        int reservadas = contarVagas(StatusVaga.RESERVADA);
+        int total = gerenciador.getVagas().size();
 
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.weightx = 1;
-        constraints.fill = GridBagConstraints.HORIZONTAL;
-        constraints.insets = new Insets(0, 0, 0, 0);
-        painelCartao.setPreferredSize(new Dimension(720, 300));
-        painelCentral.add(painelCartao, constraints);
+        JPanel painelResumo = new JPanel(new GridLayout(1, 4, 14, 0));
+        painelResumo.setOpaque(false);
+        painelResumo.add(criarCardResumo("Livres", livres, VERDE_STATUS));
+        painelResumo.add(criarCardResumo("Ocupadas", ocupadas, VERMELHO_STATUS));
+        painelResumo.add(criarCardResumo("Reservadas", reservadas, AMARELO_STATUS));
+        painelResumo.add(criarCardResumo("Total", total, ROXO_FECHADO));
+        return painelResumo;
+    }
 
-        painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
-        painelPrincipal.add(painelCentral, BorderLayout.CENTER);
-        add(painelPrincipal, BorderLayout.CENTER);
+    private JPanel criarCardResumo(String titulo, int valor, Color cor) {
+        JPanel card = new JPanel(new BorderLayout(0, 4));
+        card.setBackground(BRANCO);
+        card.setBorder(new EmptyBorder(14, 18, 14, 18));
+
+        JLabel labelValor = new JLabel(String.valueOf(valor), SwingConstants.LEFT);
+        labelValor.setFont(FONTE_CARD_NUMERO);
+        labelValor.setForeground(cor);
+
+        JLabel labelTitulo = new JLabel(titulo, SwingConstants.LEFT);
+        labelTitulo.setFont(FONTE_CARD_TITULO);
+        labelTitulo.setForeground(TEXTO_SECUNDARIO);
+
+        card.add(labelValor, BorderLayout.NORTH);
+        card.add(labelTitulo, BorderLayout.CENTER);
+        return card;
+    }
+
+    private int contarVagas(StatusVaga status) {
+        int total = 0;
+
+        for (Vaga vaga : gerenciador.getVagas().values()) {
+            if (vaga.getStatus() == status) {
+                total++;
+            }
+        }
+
+        return total;
     }
 
     private void estilizarBotao(JButton botao, Color corFundo) {
@@ -149,8 +199,8 @@ public class TelaInicial extends JFrame {
         botao.setBackground(corFundo);
         botao.setOpaque(true);
         botao.setFocusPainted(false);
-        botao.setBorder(new EmptyBorder(18, 24, 18, 24));
-        botao.setPreferredSize(new Dimension(260, 72));
+        botao.setBorder(new EmptyBorder(8, 24, 8, 24));
+        botao.setPreferredSize(new Dimension(260, 50));
     }
 
     private void abrirTelaRegistroEntrada() {

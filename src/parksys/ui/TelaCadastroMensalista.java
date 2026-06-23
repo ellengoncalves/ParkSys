@@ -78,7 +78,7 @@ public class TelaCadastroMensalista extends JFrame {
     }
 
     private void configurarJanela() {
-        setTitle("Cadastro de Mensalista");
+        setTitle("Cadastro de mensalista");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(980, 700));
         setSize(1040, 740);
@@ -104,7 +104,7 @@ public class TelaCadastroMensalista extends JFrame {
         painelPrincipal.setBorder(new EmptyBorder(30, 38, 30, 38));
 
         JPanel painelCabecalho = criarCabecalho(
-                "Cadastro de Mensalista",
+                "Cadastro de mensalista",
                 "Registre os dados do cliente, ve\u00edculo e mensalidade.");
 
         JPanel painelFormulario = new JPanel(new GridBagLayout());
@@ -307,7 +307,7 @@ public class TelaCadastroMensalista extends JFrame {
             JOptionPane.showMessageDialog(
                     this,
                     "Mensalista cadastrado com sucesso.",
-                    "Cadastro de Mensalista",
+                    "Cadastro de mensalista",
                     JOptionPane.INFORMATION_MESSAGE);
             salvarDados();
             dispose();
