@@ -23,6 +23,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
+import parksys.enums.StatusVaga;
 import parksys.observer.PainelMonitor;
 import parksys.services.GerenciadorEstacionamento;
 
@@ -81,7 +82,17 @@ final class FormularioHelper {
     }
 
     static void abrirMonitorVagas(JFrame janelaOrigem, GerenciadorEstacionamento gerenciador, JTextField campoVaga) {
-        PainelMonitor painelMonitor = new PainelMonitor(vagaSelecionada -> campoVaga.setText(vagaSelecionada));
+        abrirMonitorVagas(janelaOrigem, gerenciador, campoVaga, false);
+    }
+
+    static void abrirMonitorVagas(
+            JFrame janelaOrigem,
+            GerenciadorEstacionamento gerenciador,
+            JTextField campoVaga,
+            boolean permitirVagaReservada) {
+        PainelMonitor painelMonitor = new PainelMonitor(
+                vagaSelecionada -> campoVaga.setText(vagaSelecionada),
+                status -> status == StatusVaga.LIVRE || (permitirVagaReservada && status == StatusVaga.RESERVADA));
         painelMonitor.carregarStatusAtual(gerenciador.getVagas());
         gerenciador.addObserver(painelMonitor);
         painelMonitor.addWindowListener(new WindowAdapter() {
