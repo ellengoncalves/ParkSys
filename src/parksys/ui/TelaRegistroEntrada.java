@@ -24,8 +24,12 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
+import parksys.entities.Mensalista;
 import parksys.enums.TipoVeiculo;
+import parksys.exceptions.PlacaInvalidaException;
 import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 
@@ -48,6 +52,7 @@ public class TelaRegistroEntrada extends JFrame {
     private final JTextField campoVaga;
     private final JComboBox<TipoVeiculo> comboTipoVeiculo;
     private final PainelDesenhoVeiculo painelDesenhoVeiculo;
+    private final JLabel labelAvisoMensalista;
     private Border bordaCampoPadrao;
 
     public TelaRegistroEntrada() {
@@ -56,6 +61,7 @@ public class TelaRegistroEntrada extends JFrame {
         this.campoVaga = new JTextField(6);
         this.comboTipoVeiculo = new JComboBox<>();
         this.painelDesenhoVeiculo = new PainelDesenhoVeiculo();
+        this.labelAvisoMensalista = criarLabelAvisoMensalista();
 
         configurarJanela();
         preencherTiposVeiculo();
@@ -112,9 +118,25 @@ public class TelaRegistroEntrada extends JFrame {
         comboTipoVeiculo.setPreferredSize(new Dimension(360, 36));
         comboTipoVeiculo.addActionListener(event -> atualizarDesenhoVeiculo());
         atualizarDesenhoVeiculo();
+        campoPlaca.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent event) {
+                atualizarDadosMensalistaPelaPlaca();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent event) {
+                atualizarDadosMensalistaPelaPlaca();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent event) {
+                atualizarDadosMensalistaPelaPlaca();
+            }
+        });
         JButton botaoVerVagas = FormularioHelper.criarBotaoVerVagas(ROXO_FECHADO);
         botaoVerVagas.addActionListener(event ->
-                FormularioHelper.abrirMonitorVagas(this, gerenciador, campoVaga));
+                FormularioHelper.abrirMonitorVagas(this, gerenciador, campoVaga, true));
 
         adicionarCampo(
                 painelFormulario,
@@ -123,10 +145,11 @@ public class TelaRegistroEntrada extends JFrame {
                 "Placa:",
                 FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
         adicionarCampo(painelFormulario, constraints, 1, "Tipo de ve\u00edculo:", comboTipoVeiculo);
+        adicionarCampo(painelFormulario, constraints, 2, "", labelAvisoMensalista);
         adicionarCampo(
                 painelFormulario,
                 constraints,
-                2,
+                3,
                 "Vaga desejada:",
                 FormularioHelper.criarCampoComAcaoEAjuda(
                         campoVaga,
@@ -211,8 +234,38 @@ public class TelaRegistroEntrada extends JFrame {
         botao.setPreferredSize(new Dimension(190, 44));
     }
 
+    private JLabel criarLabelAvisoMensalista() {
+        JLabel label = new JLabel(" ");
+        label.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        label.setForeground(ROXO_FECHADO);
+        return label;
+    }
+
     private void atualizarDesenhoVeiculo() {
         painelDesenhoVeiculo.setTipoVeiculo((TipoVeiculo) comboTipoVeiculo.getSelectedItem());
+    }
+
+    private void atualizarDadosMensalistaPelaPlaca() {
+        try {
+            Mensalista mensalista = gerenciador.consultarMensalistaAtivoPorPlaca(campoPlaca.getText());
+
+            if (mensalista != null) {
+                comboTipoVeiculo.setSelectedItem(mensalista.getTipoVeiculo());
+                comboTipoVeiculo.setEnabled(false);
+                campoVaga.setText(mensalista.getIdVagaReservada());
+                campoVaga.setEditable(false);
+                labelAvisoMensalista.setText(
+                        "Mensalista identificado: tipo e vaga reservada preenchidos automaticamente.");
+                atualizarDesenhoVeiculo();
+                return;
+            }
+        } catch (PlacaInvalidaException exception) {
+            // Enquanto a placa ainda esta incompleta, a tela apenas mantem os campos editaveis.
+        }
+
+        comboTipoVeiculo.setEnabled(true);
+        campoVaga.setEditable(true);
+        labelAvisoMensalista.setText(" ");
     }
 
     private void registrarEntrada() {

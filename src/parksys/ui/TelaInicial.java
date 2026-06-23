@@ -20,6 +20,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 
+import parksys.observer.PainelMonitor;
 import parksys.services.DadosParkSys;
 import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
@@ -41,13 +42,17 @@ public class TelaInicial extends JFrame {
     private static final Font FONTE_BOTAO = new Font("Segoe UI", Font.BOLD, 16);
 
     private final GerenciadorEstacionamento gerenciador;
+    private final PainelMonitor painelMonitor;
     private final Thread monitorThread;
 
     public TelaInicial() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
+        this.painelMonitor = new PainelMonitor();
         this.monitorThread = new Thread(new MonitorRunnable(gerenciador), "Monitor-Aplicacao");
 
         carregarDados();
+        painelMonitor.carregarStatusAtual(gerenciador.getVagas());
+        gerenciador.addObserver(painelMonitor);
         iniciarMonitorDaemon();
 
         configurarJanela();
@@ -172,6 +177,8 @@ public class TelaInicial extends JFrame {
     private void fecharAplicacao() {
         monitorThread.interrupt();
         salvarDados();
+        gerenciador.removeObserver(painelMonitor);
+        painelMonitor.dispose();
         dispose();
         System.exit(0);
     }

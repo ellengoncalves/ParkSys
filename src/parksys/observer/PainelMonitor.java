@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -54,16 +55,22 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
     private final DefaultTableModel modeloTabela;
     private final JTable tabelaVagas;
     private final Consumer<String> aoSelecionarVaga;
+    private final Predicate<StatusVaga> podeSelecionarStatus;
 
     public PainelMonitor() {
         this(null);
     }
 
     public PainelMonitor(Consumer<String> aoSelecionarVaga) {
+        this(aoSelecionarVaga, status -> status == StatusVaga.LIVRE);
+    }
+
+    public PainelMonitor(Consumer<String> aoSelecionarVaga, Predicate<StatusVaga> podeSelecionarStatus) {
         this.statusVagas = new TreeMap<>();
         this.modeloTabela = criarModeloTabela();
         this.tabelaVagas = new JTable(modeloTabela);
         this.aoSelecionarVaga = aoSelecionarVaga;
+        this.podeSelecionarStatus = podeSelecionarStatus;
 
         configurarJanela();
         montarComponentes();
@@ -246,10 +253,10 @@ public class PainelMonitor extends JFrame implements EstacionamentoObserver {
         String idVaga = String.valueOf(modeloTabela.getValueAt(linhaModelo, 0));
         StatusVaga status = statusVagas.get(idVaga);
 
-        if (status != StatusVaga.LIVRE) {
+        if (!podeSelecionarStatus.test(status)) {
             JOptionPane.showMessageDialog(
                     this,
-                    "A vaga " + idVaga + " nao esta livre para cadastro.",
+                    "A vaga " + idVaga + " nao pode ser selecionada para este cadastro.",
                     "Selecionar vaga",
                     JOptionPane.WARNING_MESSAGE);
             return;

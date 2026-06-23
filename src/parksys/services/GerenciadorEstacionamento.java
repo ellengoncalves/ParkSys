@@ -51,6 +51,16 @@ public class GerenciadorEstacionamento {
         return VALOR_MENSALIDADE_FIXA;
     }
 
+    public synchronized Mensalista consultarMensalistaAtivoPorPlaca(String placa)
+            throws PlacaInvalidaException {
+        return buscarMensalistaAtivoPorPlaca(normalizarPlaca(placa));
+    }
+
+    public synchronized boolean possuiRegistroAberto(String placa)
+            throws PlacaInvalidaException {
+        return buscarRegistroAbertoPorPlaca(normalizarPlaca(placa)) != null;
+    }
+
     public synchronized void carregarDados(DadosParkSys dados) {
         if (dados == null) {
             return;
@@ -98,8 +108,27 @@ public class GerenciadorEstacionamento {
     public synchronized Registro registrarEntrada(String placa, TipoVeiculo tipoVeiculo, String idVaga)
             throws PlacaInvalidaException, VagaOcupadaException {
         String placaNormalizada = normalizarPlaca(placa);
-        Veiculo veiculo = new Veiculo(placaNormalizada, tipoVeiculo);
-        List<Vaga> vagasParaOcupar = buscarVagasConsecutivasDisponiveis(idVaga, tipoVeiculo.getVagasOcupadas());
+        String idVagaNormalizado = normalizarIdVaga(idVaga);
+
+        if (buscarRegistroAbertoPorPlaca(placaNormalizada) != null) {
+            throw new VagaOcupadaException("Ja existe registro de entrada aberto para a placa: " + placaNormalizada);
+        }
+
+        Mensalista mensalista = buscarMensalistaAtivoPorPlaca(placaNormalizada);
+        TipoVeiculo tipoRegistro = mensalista != null ? mensalista.getTipoVeiculo() : tipoVeiculo;
+        Veiculo veiculo = new Veiculo(placaNormalizada, tipoRegistro);
+        List<Vaga> vagasParaOcupar;
+
+        if (mensalista != null) {
+            if (!mensalista.getIdVagaReservada().equalsIgnoreCase(idVagaNormalizado)) {
+                throw new VagaOcupadaException(
+                        "Mensalista deve usar a vaga reservada: " + mensalista.getIdVagaReservada());
+            }
+
+            vagasParaOcupar = buscarVagasReservadasDoMensalista(mensalista);
+        } else {
+            vagasParaOcupar = buscarVagasConsecutivasDisponiveis(idVagaNormalizado, tipoRegistro.getVagasOcupadas());
+        }
 
         // Sem synchronized, duas threads poderiam verificar a mesma vaga como livre
         // ao mesmo tempo e registrar entradas simultaneas nela, causando race condition.
@@ -109,7 +138,7 @@ public class GerenciadorEstacionamento {
             vaga.setVeiculoAtual(veiculo);
         }
 
-        Registro registro = new Registro(veiculo, idVaga, LocalDateTime.now());
+        Registro registro = new Registro(veiculo, idVagaNormalizado, LocalDateTime.now());
         registro.setThreadOrigem(Thread.currentThread().getName());
         registros.add(registro);
         return registro;
@@ -124,10 +153,12 @@ public class GerenciadorEstacionamento {
             boolean registroAberto = registro.getDataSaida() == null;
 
             if (mesmaPlaca && registroAberto) {
-                double valorPago = calcularValorEstadia(registro, dataSaida);
+                Mensalista mensalista = buscarMensalistaAtivoPorPlaca(placaNormalizada);
+                double valorPago = mensalista != null ? 0.0 : calcularValorEstadia(registro, dataSaida);
+                StatusVaga statusAposSaida = mensalista != null ? StatusVaga.RESERVADA : StatusVaga.LIVRE;
                 registro.setDataSaida(dataSaida);
                 registro.setValorPago(valorPago);
-                liberarVagasDoVeiculo(placaNormalizada);
+                liberarVagasDoVeiculo(placaNormalizada, statusAposSaida);
                 return registro;
             }
         }
@@ -175,6 +206,27 @@ public class GerenciadorEstacionamento {
         long horasCobradas = Math.max(1, (long) Math.ceil(minutos / 60.0));
 
         return horasCobradas * registro.getVeiculo().getTipo().getTarifaHora();
+    }
+
+    private Registro buscarRegistroAbertoPorPlaca(String placaNormalizada) {
+        for (Registro registro : registros) {
+            if (registro.getVeiculo().getPlaca().equalsIgnoreCase(placaNormalizada)
+                    && registro.getDataSaida() == null) {
+                return registro;
+            }
+        }
+
+        return null;
+    }
+
+    private Mensalista buscarMensalistaAtivoPorPlaca(String placaNormalizada) {
+        for (Mensalista mensalista : mensalistas) {
+            if (mensalista.isAtivo() && mensalista.getPlaca().equalsIgnoreCase(placaNormalizada)) {
+                return mensalista;
+            }
+        }
+
+        return null;
     }
 
     private synchronized List<Vaga> buscarVagasConsecutivasDisponiveis(String idVagaInicial, int quantidadeVagas)
@@ -228,10 +280,13 @@ public class GerenciadorEstacionamento {
                 List<Vaga> vagasReservadas = buscarVagasConsecutivasPorId(
                         mensalista.getIdVagaReservada(),
                         mensalista.getTipoVeiculo().getVagasOcupadas());
+                Registro registroAberto = buscarRegistroAbertoPorPlaca(mensalista.getPlaca());
+                StatusVaga statusRestaurado = registroAberto != null ? StatusVaga.OCUPADA : StatusVaga.RESERVADA;
+                Veiculo veiculoAtual = registroAberto != null ? registroAberto.getVeiculo() : null;
 
                 for (Vaga vagaReservada : vagasReservadas) {
-                    vagaReservada.setStatus(StatusVaga.RESERVADA);
-                    vagaReservada.setVeiculoAtual(null);
+                    vagaReservada.setStatus(statusRestaurado);
+                    vagaReservada.setVeiculoAtual(veiculoAtual);
                 }
             } catch (VagaOcupadaException e) {
                 System.out.println("Reserva de mensalista nao restaurada: " + e.getMessage());
@@ -272,13 +327,28 @@ public class GerenciadorEstacionamento {
         return vagasEncontradas;
     }
 
-    private synchronized void liberarVagasDoVeiculo(String placa) {
+    private List<Vaga> buscarVagasReservadasDoMensalista(Mensalista mensalista)
+            throws VagaOcupadaException {
+        List<Vaga> vagasReservadas = buscarVagasConsecutivasPorId(
+                mensalista.getIdVagaReservada(),
+                mensalista.getTipoVeiculo().getVagasOcupadas());
+
+        for (Vaga vaga : vagasReservadas) {
+            if (vaga.getStatus() != StatusVaga.RESERVADA) {
+                throw new VagaOcupadaException("Vaga reservada indisponivel: " + vaga.getId());
+            }
+        }
+
+        return vagasReservadas;
+    }
+
+    private synchronized void liberarVagasDoVeiculo(String placa, StatusVaga statusAposSaida) {
         for (Vaga vaga : vagas.values()) {
             Veiculo veiculoAtual = vaga.getVeiculoAtual();
 
             if (veiculoAtual != null && veiculoAtual.getPlaca().equalsIgnoreCase(placa)) {
-                vaga.setStatus(StatusVaga.LIVRE);
-                notificarObservadores(vaga.getId(), StatusVaga.LIVRE);
+                vaga.setStatus(statusAposSaida);
+                notificarObservadores(vaga.getId(), statusAposSaida);
                 vaga.setVeiculoAtual(null);
             }
         }

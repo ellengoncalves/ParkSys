@@ -39,6 +39,7 @@ import parksys.entities.Registro;
 import parksys.entities.Vaga;
 import parksys.entities.Veiculo;
 import parksys.enums.StatusVaga;
+import parksys.exceptions.PlacaInvalidaException;
 import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 
@@ -54,6 +55,7 @@ public class TelaRelatorio extends JFrame {
     private static final Color SELECAO = new Color(237, 231, 246);
     private static final Color VERDE_STATUS = new Color(45, 128, 91);
     private static final Color VERMELHO_STATUS = new Color(181, 82, 92);
+    private static final Color AMARELO_STATUS = new Color(150, 112, 34);
     private static final Color TEXTO_ESCURO = new Color(46, 46, 46);
     private static final Color TEXTO_SECUNDARIO = new Color(92, 82, 101);
     private static final Font FONTE_TITULO = new Font("Segoe UI", Font.BOLD, 24);
@@ -77,6 +79,7 @@ public class TelaRelatorio extends JFrame {
     private final JLabel labelObservacao;
     private final DefaultTableModel modeloRegistrosDia;
     private final DefaultTableModel modeloRegistrosReceita;
+    private final DefaultTableModel modeloAvulsos;
     private final DefaultTableModel modeloMensalistas;
 
     public TelaRelatorio() {
@@ -89,6 +92,7 @@ public class TelaRelatorio extends JFrame {
         this.labelObservacao = criarLabelResumo();
         this.modeloRegistrosDia = criarModeloRegistros();
         this.modeloRegistrosReceita = criarModeloRegistros();
+        this.modeloAvulsos = criarModeloAvulsos();
         this.modeloMensalistas = criarModeloMensalistas();
 
         configurarJanela();
@@ -184,6 +188,7 @@ public class TelaRelatorio extends JFrame {
     private void atualizarRelatorio() {
         modeloRegistrosDia.setRowCount(0);
         modeloRegistrosReceita.setRowCount(0);
+        modeloAvulsos.setRowCount(0);
         modeloMensalistas.setRowCount(0);
 
         int vagasLivres = 0;
@@ -217,6 +222,10 @@ public class TelaRelatorio extends JFrame {
                     && registro.getDataEntrada().toLocalDate().equals(hoje)) {
                 modeloRegistrosDia.addRow(criarLinhaRegistro(registro));
             }
+
+            if (isRegistroAvulso(registro)) {
+                modeloAvulsos.addRow(criarLinhaRegistroAvulso(registro));
+            }
         }
 
         for (Registro registro : gerenciador.getRegistrosPorReceitaDecrescente()) {
@@ -236,6 +245,34 @@ public class TelaRelatorio extends JFrame {
     }
 
     private Object[] criarLinhaRegistro(Registro registro) {
+        Veiculo veiculo = registro.getVeiculo();
+        String status = registro.getDataSaida() == null ? "[EM ABERTO]" : "[FINALIZADO]";
+        String placa = veiculo != null ? veiculo.getPlaca() : "-";
+        String tipo = veiculo != null ? veiculo.getTipo().toString() : "-";
+        String categoria = veiculo != null && isMensalistaAtivo(veiculo.getPlaca()) ? "Mensalista" : "Avulso";
+        int vagasUsadas = veiculo != null && veiculo.getTipo() != null ? veiculo.getTipo().getVagasOcupadas() : 0;
+        String vagas = formatarVagasOcupadas(registro.getIdVaga(), vagasUsadas);
+        String entrada = registro.getDataEntrada() != null
+                ? registro.getDataEntrada().format(FORMATADOR_DATA_HORA)
+                : "-";
+        String saida = registro.getDataSaida() != null
+                ? registro.getDataSaida().format(FORMATADOR_DATA_HORA)
+                : "-";
+
+        return new Object[] {
+                status,
+                vagas,
+                placa,
+                tipo,
+                categoria,
+                vagasUsadas,
+                entrada,
+                saida,
+                FORMATADOR_MOEDA.format(registro.getValorPago())
+        };
+    }
+
+    private Object[] criarLinhaRegistroAvulso(Registro registro) {
         Veiculo veiculo = registro.getVeiculo();
         String status = registro.getDataSaida() == null ? "[EM ABERTO]" : "[FINALIZADO]";
         String placa = veiculo != null ? veiculo.getPlaca() : "-";
@@ -261,6 +298,19 @@ public class TelaRelatorio extends JFrame {
         };
     }
 
+    private boolean isMensalistaAtivo(String placa) {
+        try {
+            return gerenciador.consultarMensalistaAtivoPorPlaca(placa) != null;
+        } catch (PlacaInvalidaException exception) {
+            return false;
+        }
+    }
+
+    private boolean isRegistroAvulso(Registro registro) {
+        Veiculo veiculo = registro.getVeiculo();
+        return veiculo == null || !isMensalistaAtivo(veiculo.getPlaca());
+    }
+
     private Object[] criarLinhaMensalista(Mensalista mensalista) {
         int vagasUsadas = mensalista.getTipoVeiculo() != null
                 ? mensalista.getTipoVeiculo().getVagasOcupadas()
@@ -272,17 +322,29 @@ public class TelaRelatorio extends JFrame {
                 : "-";
 
         return new Object[] {
+                formatarStatusMensalista(mensalista),
                 mensalista.getNome(),
-                mensalista.getDocumento(),
-                mensalista.getTelefone(),
                 mensalista.getPlaca(),
                 mensalista.getTipoVeiculo(),
                 vagas,
                 vagasUsadas,
                 FORMATADOR_MOEDA.format(mensalista.getValorMensalidade()),
-                dataCadastro,
-                mensalista.isAtivo() ? "Ativo" : "Inativo"
+                dataCadastro
         };
+    }
+
+    private String formatarStatusMensalista(Mensalista mensalista) {
+        if (!mensalista.isAtivo()) {
+            return "[FINALIZADO]";
+        }
+
+        try {
+            return gerenciador.possuiRegistroAberto(mensalista.getPlaca())
+                    ? "[EM ABERTO]"
+                    : "[RESERVADO]";
+        } catch (PlacaInvalidaException exception) {
+            return "[RESERVADO]";
+        }
     }
 
     private String formatarVagasOcupadas(String idVagaInicial, int vagasUsadas) {
@@ -316,6 +378,7 @@ public class TelaRelatorio extends JFrame {
         abas.setFont(FONTE_LABEL);
         abas.addTab("Registros do dia", new JScrollPane(criarTabelaRegistros(modeloRegistrosDia)));
         abas.addTab("Receita decrescente", new JScrollPane(criarTabelaRegistros(modeloRegistrosReceita)));
+        abas.addTab("Avulsos", new JScrollPane(criarTabelaAvulsos()));
         abas.addTab("Mensalistas", new JScrollPane(criarTabelaMensalistas()));
         return abas;
     }
@@ -326,10 +389,11 @@ public class TelaRelatorio extends JFrame {
         tabela.getColumnModel().getColumn(1).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(3).setPreferredWidth(130);
-        tabela.getColumnModel().getColumn(4).setPreferredWidth(80);
-        tabela.getColumnModel().getColumn(5).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(4).setPreferredWidth(100);
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(80);
         tabela.getColumnModel().getColumn(6).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(7).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(7).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(8).setPreferredWidth(90);
         return tabela;
     }
 
@@ -360,6 +424,32 @@ public class TelaRelatorio extends JFrame {
 
     private DefaultTableModel criarModeloRegistros() {
         return new DefaultTableModel(
+                new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Categoria", "Qtd. vagas", "Entrada", "Saida", "Valor"},
+                0) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+    }
+
+    private JTable criarTabelaAvulsos() {
+        JTable tabela = criarTabelaPadrao(modeloAvulsos);
+        tabela.getColumnModel().getColumn(0).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(1).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(3).setPreferredWidth(130);
+        tabela.getColumnModel().getColumn(4).setPreferredWidth(80);
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(6).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(7).setPreferredWidth(90);
+        return tabela;
+    }
+
+    private DefaultTableModel criarModeloAvulsos() {
+        return new DefaultTableModel(
                 new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Qtd. vagas", "Entrada", "Saida", "Valor"},
                 0) {
             private static final long serialVersionUID = 1L;
@@ -373,32 +463,28 @@ public class TelaRelatorio extends JFrame {
 
     private JTable criarTabelaMensalistas() {
         JTable tabela = criarTabelaPadrao(modeloMensalistas);
-        tabela.getColumnModel().getColumn(0).setPreferredWidth(140);
-        tabela.getColumnModel().getColumn(1).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(2).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(3).setPreferredWidth(90);
-        tabela.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(0).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(1).setPreferredWidth(140);
+        tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tabela.getColumnModel().getColumn(4).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(5).setPreferredWidth(90);
-        tabela.getColumnModel().getColumn(6).setPreferredWidth(80);
+        tabela.getColumnModel().getColumn(6).setPreferredWidth(100);
         tabela.getColumnModel().getColumn(7).setPreferredWidth(100);
-        tabela.getColumnModel().getColumn(8).setPreferredWidth(100);
-        tabela.getColumnModel().getColumn(9).setPreferredWidth(80);
         return tabela;
     }
 
     private DefaultTableModel criarModeloMensalistas() {
         return new DefaultTableModel(
                 new Object[] {
+                        "Status",
                         "Nome",
-                        "Documento",
-                        "Telefone",
                         "Placa",
                         "Tipo",
                         "Vaga(s)",
                         "Qtd. vagas",
                         "Mensalidade",
-                        "Cadastro",
-                        "Status"
+                        "Cadastro"
                 },
                 0) {
             private static final long serialVersionUID = 1L;
@@ -441,11 +527,15 @@ public class TelaRelatorio extends JFrame {
         }
 
         private Color corStatus(String valor) {
-            if ("[EM ABERTO]".equalsIgnoreCase(valor) || "Ativo".equalsIgnoreCase(valor)) {
+            if ("[EM ABERTO]".equalsIgnoreCase(valor)) {
                 return VERDE_STATUS;
             }
 
-            if ("[FINALIZADO]".equalsIgnoreCase(valor) || "Inativo".equalsIgnoreCase(valor)) {
+            if ("[RESERVADO]".equalsIgnoreCase(valor)) {
+                return AMARELO_STATUS;
+            }
+
+            if ("[FINALIZADO]".equalsIgnoreCase(valor)) {
                 return VERMELHO_STATUS;
             }
 
