@@ -69,7 +69,7 @@ public class TelaRegistroEntrada extends JFrame {
     }
 
     private void configurarJanela() {
-        setTitle("Registro de Entrada");
+        setTitle("Registro de entrada");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(860, 500));
         setSize(920, 560);
@@ -95,7 +95,7 @@ public class TelaRegistroEntrada extends JFrame {
         painelPrincipal.setBorder(new EmptyBorder(30, 38, 30, 38));
 
         JPanel painelCabecalho = criarCabecalho(
-                "Registrar Entrada",
+                "Registrar entrada",
                 "Informe a placa, o tipo de ve\u00edculo e a vaga para iniciar o registro.");
 
         JPanel painelFormulario = new JPanel(new GridBagLayout());
@@ -145,24 +145,24 @@ public class TelaRegistroEntrada extends JFrame {
                 "Placa:",
                 FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
         adicionarCampo(painelFormulario, constraints, 1, "Tipo de ve\u00edculo:", comboTipoVeiculo);
-        adicionarCampo(painelFormulario, constraints, 2, "", labelAvisoMensalista);
         adicionarCampo(
                 painelFormulario,
                 constraints,
-                3,
+                2,
                 "Vaga desejada:",
                 FormularioHelper.criarCampoComAcaoEAjuda(
                         campoVaga,
                         botaoVerVagas,
                         "Formato aceito: A01 ate B15",
                         "Informe uma vaga entre A01 e B15."));
+        adicionarCampo(painelFormulario, constraints, 3, "", labelAvisoMensalista);
 
         JPanel painelConteudo = new JPanel(new BorderLayout(18, 0));
         painelConteudo.setOpaque(false);
         painelConteudo.add(painelFormulario, BorderLayout.CENTER);
         painelConteudo.add(painelDesenhoVeiculo, BorderLayout.EAST);
 
-        JButton botaoRegistrar = new JButton("Registrar Entrada");
+        JButton botaoRegistrar = new JButton("Registrar entrada");
         estilizarBotao(botaoRegistrar);
         botaoRegistrar.addActionListener(event -> registrarEntrada());
 
@@ -238,6 +238,7 @@ public class TelaRegistroEntrada extends JFrame {
         JLabel label = new JLabel(" ");
         label.setFont(new Font("Segoe UI", Font.BOLD, 12));
         label.setForeground(ROXO_FECHADO);
+        label.setVisible(false);
         return label;
     }
 
@@ -256,6 +257,7 @@ public class TelaRegistroEntrada extends JFrame {
                 campoVaga.setEditable(false);
                 labelAvisoMensalista.setText(
                         "Mensalista identificado: tipo e vaga reservada preenchidos automaticamente.");
+                labelAvisoMensalista.setVisible(true);
                 atualizarDesenhoVeiculo();
                 return;
             }
@@ -266,6 +268,7 @@ public class TelaRegistroEntrada extends JFrame {
         comboTipoVeiculo.setEnabled(true);
         campoVaga.setEditable(true);
         labelAvisoMensalista.setText(" ");
+        labelAvisoMensalista.setVisible(false);
     }
 
     private void registrarEntrada() {
@@ -278,7 +281,7 @@ public class TelaRegistroEntrada extends JFrame {
             JOptionPane.showMessageDialog(
                     this,
                     "Entrada registrada com sucesso.",
-                    "Registro de Entrada",
+                    "Registro de entrada",
                     JOptionPane.INFORMATION_MESSAGE);
             salvarDados();
             dispose();

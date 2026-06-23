@@ -55,7 +55,7 @@ public class TelaSaida extends JFrame {
     }
 
     private void configurarJanela() {
-        setTitle("Registro de Sa\u00edda");
+        setTitle("Registro de sa\u00edda");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(680, 360));
         setSize(720, 400);
@@ -75,7 +75,7 @@ public class TelaSaida extends JFrame {
         painelPrincipal.setBorder(new EmptyBorder(30, 38, 30, 38));
 
         JPanel painelCabecalho = criarCabecalho(
-                "Registrar Sa\u00edda",
+                "Registrar sa\u00edda",
                 "Informe a placa do ve\u00edculo para finalizar o registro.");
 
         JPanel painelFormulario = new JPanel(new GridBagLayout());
@@ -100,7 +100,7 @@ public class TelaSaida extends JFrame {
                 "Placa:",
                 FormularioHelper.criarCampoPlacaComAjuda(campoPlaca, bordaCampoPadrao));
 
-        JButton botaoRegistrar = new JButton("Registrar Sa\u00edda");
+        JButton botaoRegistrar = new JButton("Registrar sa\u00edda");
         estilizarBotao(botaoRegistrar);
         botaoRegistrar.addActionListener(event -> registrarSaida());
 
@@ -180,7 +180,7 @@ public class TelaSaida extends JFrame {
             JOptionPane.showMessageDialog(
                     this,
                     "Sa\u00edda registrada com sucesso.",
-                    "Registro de Sa\u00edda",
+                    "Registro de sa\u00edda",
                     JOptionPane.INFORMATION_MESSAGE);
             salvarDados();
             dispose();

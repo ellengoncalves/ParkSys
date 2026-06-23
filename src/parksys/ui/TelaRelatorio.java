@@ -78,6 +78,8 @@ public class TelaRelatorio extends JFrame {
     private final JLabel labelVagasOcupadas;
     private final JLabel labelVagasReservadas;
     private final JLabel labelVeiculosEmAberto;
+    private final JLabel labelReceitaAvulsa;
+    private final JLabel labelReceitaMensalistas;
     private final JLabel labelReceitaTotal;
     private final JLabel labelObservacao;
     private final DefaultTableModel modeloRegistrosDia;
@@ -91,6 +93,8 @@ public class TelaRelatorio extends JFrame {
         this.labelVagasOcupadas = criarLabelResumo();
         this.labelVagasReservadas = criarLabelResumo();
         this.labelVeiculosEmAberto = criarLabelResumo();
+        this.labelReceitaAvulsa = criarLabelResumo();
+        this.labelReceitaMensalistas = criarLabelResumo();
         this.labelReceitaTotal = criarLabelResumo();
         this.labelObservacao = criarLabelResumo();
         this.modeloRegistrosDia = criarModeloRegistros();
@@ -104,7 +108,7 @@ public class TelaRelatorio extends JFrame {
     }
 
     private void configurarJanela() {
-        setTitle("Relat\u00f3rio do Estacionamento");
+        setTitle("Relat\u00f3rio do estacionamento");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(900, 620));
         setSize(980, 680);
@@ -124,7 +128,7 @@ public class TelaRelatorio extends JFrame {
         painelPrincipal.setBorder(new EmptyBorder(30, 38, 30, 38));
 
         JPanel painelCabecalho = criarCabecalho(
-                "Relat\u00f3rio do Estacionamento",
+                "Relat\u00f3rio do estacionamento",
                 "Acompanhe vagas, receita e registros do dia.");
 
         JPanel painelResumo = criarPainelResumo();
@@ -210,12 +214,13 @@ public class TelaRelatorio extends JFrame {
             }
         }
 
-        double receitaTotal = 0.0;
+        double receitaAvulsa = 0.0;
+        double receitaMensalistas = 0.0;
         int veiculosEmAberto = 0;
         LocalDate hoje = LocalDate.now();
 
         for (Registro registro : gerenciador.getRegistrosOrdenados()) {
-            receitaTotal += registro.getValorPago();
+            receitaAvulsa += registro.getValorPago();
 
             if (registro.getDataSaida() == null) {
                 veiculosEmAberto++;
@@ -236,23 +241,32 @@ public class TelaRelatorio extends JFrame {
         }
 
         for (Mensalista mensalista : gerenciador.getMensalistas()) {
+            if (mensalista.isAtivo()) {
+                receitaMensalistas += mensalista.getValorMensalidade();
+            }
+
             modeloMensalistas.addRow(criarLinhaMensalista(mensalista));
         }
+
+        double receitaTotal = receitaAvulsa + receitaMensalistas;
 
         labelVagasLivres.setText("Vagas livres: " + vagasLivres);
         labelVagasOcupadas.setText("Vagas ocupadas: " + vagasOcupadas + " (espacos fisicos)");
         labelVagasReservadas.setText("Vagas reservadas: " + vagasReservadas);
         labelVeiculosEmAberto.setText("Veiculos em aberto: " + veiculosEmAberto);
+        labelReceitaAvulsa.setText("Receita avulsa: " + FORMATADOR_MOEDA.format(receitaAvulsa));
+        labelReceitaMensalistas.setText("Receita mensalistas: " + FORMATADOR_MOEDA.format(receitaMensalistas));
         labelReceitaTotal.setText("Receita total: " + FORMATADOR_MOEDA.format(receitaTotal));
         labelObservacao.setText("Moto/carro ocupam 1 vaga, SUV ocupa 2 e caminhao ocupa 3.");
     }
 
     private Object[] criarLinhaRegistro(Registro registro) {
         Veiculo veiculo = registro.getVeiculo();
+        Mensalista mensalista = veiculo != null ? buscarMensalistaPorPlaca(veiculo.getPlaca()) : null;
         String status = registro.getDataSaida() == null ? "[EM ABERTO]" : "[FINALIZADO]";
         String placa = veiculo != null ? veiculo.getPlaca() : "-";
         String tipo = veiculo != null ? veiculo.getTipo().toString() : "-";
-        String categoria = veiculo != null && isMensalistaAtivo(veiculo.getPlaca()) ? "Mensalista" : "Avulso";
+        String categoria = mensalista != null ? "Mensalista" : "Avulso";
         int vagasUsadas = veiculo != null && veiculo.getTipo() != null ? veiculo.getTipo().getVagasOcupadas() : 0;
         String vagas = formatarVagasOcupadas(registro.getIdVaga(), vagasUsadas);
         String entrada = registro.getDataEntrada() != null
@@ -268,10 +282,10 @@ public class TelaRelatorio extends JFrame {
                 placa,
                 tipo,
                 categoria,
-                vagasUsadas,
                 entrada,
                 saida,
-                FORMATADOR_MOEDA.format(registro.getValorPago())
+                FORMATADOR_MOEDA.format(registro.getValorPago()),
+                formatarMensalidade(mensalista)
         };
     }
 
@@ -294,24 +308,15 @@ public class TelaRelatorio extends JFrame {
                 vagas,
                 placa,
                 tipo,
-                vagasUsadas,
                 entrada,
                 saida,
                 FORMATADOR_MOEDA.format(registro.getValorPago())
         };
     }
 
-    private boolean isMensalistaAtivo(String placa) {
-        try {
-            return gerenciador.consultarMensalistaAtivoPorPlaca(placa) != null;
-        } catch (PlacaInvalidaException exception) {
-            return false;
-        }
-    }
-
     private boolean isRegistroAvulso(Registro registro) {
         Veiculo veiculo = registro.getVeiculo();
-        return veiculo == null || !isMensalistaAtivo(veiculo.getPlaca());
+        return veiculo == null || buscarMensalistaPorPlaca(veiculo.getPlaca()) == null;
     }
 
     private Object[] criarLinhaMensalista(Mensalista mensalista) {
@@ -330,7 +335,6 @@ public class TelaRelatorio extends JFrame {
                 mensalista.getPlaca(),
                 mensalista.getTipoVeiculo(),
                 vagas,
-                vagasUsadas,
                 FORMATADOR_MOEDA.format(mensalista.getValorMensalidade()),
                 dataCadastro
         };
@@ -342,12 +346,50 @@ public class TelaRelatorio extends JFrame {
         }
 
         try {
-            return gerenciador.possuiRegistroAberto(mensalista.getPlaca())
-                    ? "[EM ABERTO]"
-                    : "[RESERVADO]";
+            if (gerenciador.possuiRegistroAberto(mensalista.getPlaca())) {
+                return "[EM ABERTO]";
+            }
         } catch (PlacaInvalidaException exception) {
             return "[RESERVADO]";
         }
+
+        return possuiRegistroFinalizado(mensalista.getPlaca()) ? "[FINALIZADO]" : "[RESERVADO]";
+    }
+
+    private Mensalista buscarMensalistaPorPlaca(String placa) {
+        if (placa == null) {
+            return null;
+        }
+
+        for (Mensalista mensalista : gerenciador.getMensalistas()) {
+            if (mensalista.getPlaca().equalsIgnoreCase(placa)) {
+                return mensalista;
+            }
+        }
+
+        return null;
+    }
+
+    private String formatarMensalidade(Mensalista mensalista) {
+        return mensalista != null ? FORMATADOR_MOEDA.format(mensalista.getValorMensalidade()) : "-";
+    }
+
+    private boolean possuiRegistroFinalizado(String placa) {
+        if (placa == null) {
+            return false;
+        }
+
+        for (Registro registro : gerenciador.getRegistros()) {
+            Veiculo veiculo = registro.getVeiculo();
+
+            if (veiculo != null
+                    && veiculo.getPlaca().equalsIgnoreCase(placa)
+                    && registro.getDataSaida() != null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private String formatarVagasOcupadas(String idVagaInicial, int vagasUsadas) {
@@ -364,13 +406,15 @@ public class TelaRelatorio extends JFrame {
     }
 
     private JPanel criarPainelResumo() {
-        JPanel painelResumo = new JPanel(new GridLayout(2, 3, 12, 8));
+        JPanel painelResumo = new JPanel(new GridLayout(2, 4, 12, 8));
         painelResumo.setBackground(FUNDO_CLARO);
         painelResumo.setBorder(new EmptyBorder(12, 12, 0, 12));
         painelResumo.add(labelVagasLivres);
         painelResumo.add(labelVagasOcupadas);
         painelResumo.add(labelVagasReservadas);
         painelResumo.add(labelVeiculosEmAberto);
+        painelResumo.add(labelReceitaAvulsa);
+        painelResumo.add(labelReceitaMensalistas);
         painelResumo.add(labelReceitaTotal);
         painelResumo.add(labelObservacao);
         return painelResumo;
@@ -393,10 +437,10 @@ public class TelaRelatorio extends JFrame {
         tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(3).setPreferredWidth(130);
         tabela.getColumnModel().getColumn(4).setPreferredWidth(100);
-        tabela.getColumnModel().getColumn(5).setPreferredWidth(80);
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(120);
         tabela.getColumnModel().getColumn(6).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(7).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(8).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(7).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(8).setPreferredWidth(110);
         return tabela;
     }
 
@@ -427,7 +471,7 @@ public class TelaRelatorio extends JFrame {
 
     private DefaultTableModel criarModeloRegistros() {
         return new DefaultTableModel(
-                new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Categoria", "Qtd. vagas", "Entrada", "Saida", "Valor"},
+                new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Categoria", "Entrada", "Saida", "Valor", "Mensalidade"},
                 0) {
             private static final long serialVersionUID = 1L;
 
@@ -444,16 +488,15 @@ public class TelaRelatorio extends JFrame {
         tabela.getColumnModel().getColumn(1).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(3).setPreferredWidth(130);
-        tabela.getColumnModel().getColumn(4).setPreferredWidth(80);
+        tabela.getColumnModel().getColumn(4).setPreferredWidth(120);
         tabela.getColumnModel().getColumn(5).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(6).setPreferredWidth(120);
-        tabela.getColumnModel().getColumn(7).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(6).setPreferredWidth(90);
         return tabela;
     }
 
     private DefaultTableModel criarModeloAvulsos() {
         return new DefaultTableModel(
-                new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Qtd. vagas", "Entrada", "Saida", "Valor"},
+                new Object[] {"Status", "Vaga(s)", "Placa", "Tipo", "Entrada", "Saida", "Valor"},
                 0) {
             private static final long serialVersionUID = 1L;
 
@@ -471,9 +514,8 @@ public class TelaRelatorio extends JFrame {
         tabela.getColumnModel().getColumn(2).setPreferredWidth(90);
         tabela.getColumnModel().getColumn(3).setPreferredWidth(120);
         tabela.getColumnModel().getColumn(4).setPreferredWidth(90);
-        tabela.getColumnModel().getColumn(5).setPreferredWidth(90);
+        tabela.getColumnModel().getColumn(5).setPreferredWidth(100);
         tabela.getColumnModel().getColumn(6).setPreferredWidth(100);
-        tabela.getColumnModel().getColumn(7).setPreferredWidth(100);
         return tabela;
     }
 
@@ -485,7 +527,6 @@ public class TelaRelatorio extends JFrame {
                         "Placa",
                         "Tipo",
                         "Vaga(s)",
-                        "Qtd. vagas",
                         "Mensalidade",
                         "Cadastro"
                 },
