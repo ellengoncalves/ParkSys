@@ -63,6 +63,7 @@ public class TelaCadastroMensalista extends JFrame {
 
     public TelaCadastroMensalista() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
+        this.gerenciador.carregarDadosSalvos(CAMINHO_DADOS);
         this.campoNome = new JTextField(18);
         this.campoDocumento = new JTextField(14);
         this.campoTelefone = new JTextField(12);

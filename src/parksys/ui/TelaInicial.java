@@ -21,7 +21,6 @@ import javax.swing.border.EmptyBorder;
 import parksys.entities.Vaga;
 import parksys.enums.StatusVaga;
 import parksys.observer.PainelMonitor;
-import parksys.services.DadosParkSys;
 import parksys.services.GerenciadorArquivo;
 import parksys.services.GerenciadorEstacionamento;
 import parksys.services.MonitorRunnable;
@@ -47,11 +46,19 @@ public class TelaInicial extends JFrame {
     private final GerenciadorEstacionamento gerenciador;
     private final PainelMonitor painelMonitor;
     private final Thread monitorThread;
+    private final JLabel labelVagasLivres;
+    private final JLabel labelVagasOcupadas;
+    private final JLabel labelVagasReservadas;
+    private final JLabel labelTotalVagas;
 
     public TelaInicial() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
         this.painelMonitor = new PainelMonitor();
         this.monitorThread = new Thread(new MonitorRunnable(gerenciador), "Monitor-Aplicacao");
+        this.labelVagasLivres = criarLabelValorResumo(VERDE_STATUS);
+        this.labelVagasOcupadas = criarLabelValorResumo(VERMELHO_STATUS);
+        this.labelVagasReservadas = criarLabelValorResumo(AMARELO_STATUS);
+        this.labelTotalVagas = criarLabelValorResumo(ROXO_FECHADO);
 
         carregarDados();
         painelMonitor.carregarStatusAtual(gerenciador.getVagas());
@@ -73,6 +80,11 @@ public class TelaInicial extends JFrame {
             @Override
             public void windowClosing(WindowEvent event) {
                 fecharAplicacao();
+            }
+
+            @Override
+            public void windowActivated(WindowEvent event) {
+                atualizarResumoVagas();
             }
         });
     }
@@ -149,28 +161,20 @@ public class TelaInicial extends JFrame {
     }
 
     private JPanel criarPainelResumoVagas() {
-        int livres = contarVagas(StatusVaga.LIVRE);
-        int ocupadas = contarVagas(StatusVaga.OCUPADA);
-        int reservadas = contarVagas(StatusVaga.RESERVADA);
-        int total = gerenciador.getVagas().size();
-
         JPanel painelResumo = new JPanel(new GridLayout(1, 4, 14, 0));
         painelResumo.setOpaque(false);
-        painelResumo.add(criarCardResumo("Livres", livres, VERDE_STATUS));
-        painelResumo.add(criarCardResumo("Ocupadas", ocupadas, VERMELHO_STATUS));
-        painelResumo.add(criarCardResumo("Reservadas", reservadas, AMARELO_STATUS));
-        painelResumo.add(criarCardResumo("Total", total, ROXO_FECHADO));
+        painelResumo.add(criarCardResumo("Livres", labelVagasLivres));
+        painelResumo.add(criarCardResumo("Ocupadas", labelVagasOcupadas));
+        painelResumo.add(criarCardResumo("Reservadas", labelVagasReservadas));
+        painelResumo.add(criarCardResumo("Total", labelTotalVagas));
+        atualizarResumoVagas();
         return painelResumo;
     }
 
-    private JPanel criarCardResumo(String titulo, int valor, Color cor) {
+    private JPanel criarCardResumo(String titulo, JLabel labelValor) {
         JPanel card = new JPanel(new BorderLayout(0, 4));
         card.setBackground(BRANCO);
         card.setBorder(new EmptyBorder(14, 18, 14, 18));
-
-        JLabel labelValor = new JLabel(String.valueOf(valor), SwingConstants.LEFT);
-        labelValor.setFont(FONTE_CARD_NUMERO);
-        labelValor.setForeground(cor);
 
         JLabel labelTitulo = new JLabel(titulo, SwingConstants.LEFT);
         labelTitulo.setFont(FONTE_CARD_TITULO);
@@ -179,6 +183,20 @@ public class TelaInicial extends JFrame {
         card.add(labelValor, BorderLayout.NORTH);
         card.add(labelTitulo, BorderLayout.CENTER);
         return card;
+    }
+
+    private JLabel criarLabelValorResumo(Color cor) {
+        JLabel label = new JLabel("0", SwingConstants.LEFT);
+        label.setFont(FONTE_CARD_NUMERO);
+        label.setForeground(cor);
+        return label;
+    }
+
+    private void atualizarResumoVagas() {
+        labelVagasLivres.setText(String.valueOf(contarVagas(StatusVaga.LIVRE)));
+        labelVagasOcupadas.setText(String.valueOf(contarVagas(StatusVaga.OCUPADA)));
+        labelVagasReservadas.setText(String.valueOf(contarVagas(StatusVaga.RESERVADA)));
+        labelTotalVagas.setText(String.valueOf(gerenciador.getVagas().size()));
     }
 
     private int contarVagas(StatusVaga status) {
@@ -234,11 +252,7 @@ public class TelaInicial extends JFrame {
     }
 
     private void carregarDados() {
-        DadosParkSys dados = GerenciadorArquivo.desserializar(CAMINHO_DADOS);
-
-        if (dados.getVagas() != null && !dados.getVagas().isEmpty()) {
-            gerenciador.carregarDados(dados);
-        }
+        gerenciador.carregarDadosSalvos(CAMINHO_DADOS);
     }
 
     private void salvarDados() {

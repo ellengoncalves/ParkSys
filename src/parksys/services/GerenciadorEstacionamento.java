@@ -34,12 +34,14 @@ public class GerenciadorEstacionamento {
     private final ArrayList<Registro> registros;
     private final LinkedList<Mensalista> mensalistas;
     private final List<EstacionamentoObserver> observadores;
+    private boolean dadosCarregados;
 
     private GerenciadorEstacionamento() {
         this.vagas = new HashMap<>();
         this.registros = new ArrayList<>();
         this.mensalistas = new LinkedList<>();
         this.observadores = new ArrayList<>();
+        this.dadosCarregados = false;
         inicializarVagas();
     }
 
@@ -59,6 +61,20 @@ public class GerenciadorEstacionamento {
     public synchronized boolean possuiRegistroAberto(String placa)
             throws PlacaInvalidaException {
         return buscarRegistroAbertoPorPlaca(normalizarPlaca(placa)) != null;
+    }
+
+    public synchronized void carregarDadosSalvos(String caminhoDados) {
+        if (dadosCarregados) {
+            return;
+        }
+
+        DadosParkSys dados = GerenciadorArquivo.desserializar(caminhoDados);
+
+        if (dados.getVagas() != null && !dados.getVagas().isEmpty()) {
+            carregarDados(dados);
+        }
+
+        dadosCarregados = true;
     }
 
     public synchronized void carregarDados(DadosParkSys dados) {

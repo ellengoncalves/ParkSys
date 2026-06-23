@@ -13,6 +13,9 @@ import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +25,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.ListSelectionModel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
@@ -70,6 +74,8 @@ public class TelaRelatorio extends JFrame {
 
     private static final DateTimeFormatter FORMATADOR_DATA_HORA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FORMATADOR_NOME_ARQUIVO =
+            DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
     private static final NumberFormat FORMATADOR_MOEDA =
             NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"));
 
@@ -89,6 +95,7 @@ public class TelaRelatorio extends JFrame {
 
     public TelaRelatorio() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
+        this.gerenciador.carregarDadosSalvos(CAMINHO_DADOS);
         this.labelVagasLivres = criarLabelResumo();
         this.labelVagasOcupadas = criarLabelResumo();
         this.labelVagasReservadas = criarLabelResumo();
@@ -150,6 +157,10 @@ public class TelaRelatorio extends JFrame {
         estilizarBotao(botaoAtualizar, ROXO_FECHADO);
         botaoAtualizar.addActionListener(event -> atualizarRelatorio());
 
+        JButton botaoExportar = new JButton("Exportar .txt");
+        estilizarBotao(botaoExportar, ROXO_FECHADO);
+        botaoExportar.addActionListener(event -> exportarRelatorioTxt());
+
         JButton botaoFechar = new JButton("Fechar");
         estilizarBotao(botaoFechar, ROSA_QUEIMADO);
         botaoFechar.addActionListener(event -> fecharJanela());
@@ -157,6 +168,7 @@ public class TelaRelatorio extends JFrame {
         JPanel painelBotoes = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         painelBotoes.setBackground(FUNDO_CLARO);
         painelBotoes.add(botaoAtualizar);
+        painelBotoes.add(botaoExportar);
         painelBotoes.add(botaoFechar);
 
         painelPrincipal.add(painelCabecalho, BorderLayout.NORTH);
@@ -236,7 +248,7 @@ public class TelaRelatorio extends JFrame {
             }
         }
 
-        for (Registro registro : gerenciador.getRegistrosPorReceitaDecrescente()) {
+        for (Registro registro : getRegistrosPorReceitaEfetivaDecrescente()) {
             modeloRegistrosReceita.addRow(criarLinhaRegistro(registro));
         }
 
@@ -287,6 +299,23 @@ public class TelaRelatorio extends JFrame {
                 FORMATADOR_MOEDA.format(registro.getValorPago()),
                 formatarMensalidade(mensalista)
         };
+    }
+
+    private List<Registro> getRegistrosPorReceitaEfetivaDecrescente() {
+        ArrayList<Registro> registrosOrdenados = new ArrayList<>(gerenciador.getRegistros());
+        registrosOrdenados.sort(Comparator.comparingDouble(this::calcularReceitaEfetiva).reversed());
+        return registrosOrdenados;
+    }
+
+    private double calcularReceitaEfetiva(Registro registro) {
+        Veiculo veiculo = registro.getVeiculo();
+        Mensalista mensalista = veiculo != null ? buscarMensalistaPorPlaca(veiculo.getPlaca()) : null;
+
+        if (mensalista != null) {
+            return mensalista.getValorMensalidade();
+        }
+
+        return registro.getValorPago();
     }
 
     private Object[] criarLinhaRegistroAvulso(Registro registro) {
@@ -617,6 +646,30 @@ public class TelaRelatorio extends JFrame {
 
     private void fecharJanela() {
         dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+    }
+
+    private void exportarRelatorioTxt() {
+        String caminhoRelatorio = "relatorios/relatorio-parksys-"
+                + LocalDateTime.now().format(FORMATADOR_NOME_ARQUIVO)
+                + ".txt";
+        boolean exportado = GerenciadorArquivo.exportarRelatorioTxt(
+                gerenciador.getRegistros(),
+                gerenciador.getMensalistas(),
+                caminhoRelatorio);
+
+        if (exportado) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Relatorio exportado com sucesso em:\n" + caminhoRelatorio,
+                    "Exportar relatorio",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Nao foi possivel exportar o relatorio.",
+                    "Exportar relatorio",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void salvarDados() {

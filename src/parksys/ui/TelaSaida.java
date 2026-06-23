@@ -48,6 +48,7 @@ public class TelaSaida extends JFrame {
 
     public TelaSaida() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
+        this.gerenciador.carregarDadosSalvos(CAMINHO_DADOS);
         this.campoPlaca = new JTextField(12);
 
         configurarJanela();

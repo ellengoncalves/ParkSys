@@ -57,6 +57,7 @@ public class TelaRegistroEntrada extends JFrame {
 
     public TelaRegistroEntrada() {
         this.gerenciador = GerenciadorEstacionamento.getInstance();
+        this.gerenciador.carregarDadosSalvos(CAMINHO_DADOS);
         this.campoPlaca = new JTextField(12);
         this.campoVaga = new JTextField(6);
         this.comboTipoVeiculo = new JComboBox<>();
