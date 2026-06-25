@@ -86,33 +86,86 @@ src/
 | `parksys.ui` | Contem as telas Swing e componentes visuais. |
 | `parksys.main` | Demonstra recursos de threads e inicia a aplicacao. |
 
-## Como executar
+## Como executar o projeto do zero
 
-### Compilar
+### 1. Clonar o repositorio
 
-No PowerShell, execute:
+No terminal, escolha uma pasta para salvar o projeto e execute:
+
+```powershell
+git clone https://github.com/ellengoncalves/ParkSys.git
+cd ParkSys
+```
+
+### 2. Verificar o Java
+
+O projeto foi desenvolvido para ser compativel com Java 8 ou superior.
+
+Ambiente usado no desenvolvimento:
+
+```text
+java 1.8.0_401
+javac 21.0.8
+```
+
+Para verificar a versao instalada na sua maquina:
+
+```powershell
+java -version
+javac -version
+```
+
+Se o comando `javac` nao for reconhecido, instale um JDK e configure a variavel `PATH`.
+
+### Rodar pelo terminal
+
+Ao clonar o projeto, a pasta `out/` ainda nao existe. Por isso, no terminal, primeiro e necessario compilar o codigo e depois executar a aplicacao.
+
+No PowerShell, com JDK 9 ou superior, compile com:
 
 ```powershell
 javac --release 8 -encoding UTF-8 -d out (Get-ChildItem -Path src -Recurse -Filter *.java).FullName
 ```
 
-### Abrir o sistema pela interface grafica
+Se estiver usando JDK 8, use:
 
-Use esta opcao para utilizar o sistema normalmente:
+```powershell
+javac -encoding UTF-8 -d out (Get-ChildItem -Path src -Recurse -Filter *.java).FullName
+```
+
+Depois de compilar, execute a tela inicial:
 
 ```powershell
 java -cp out parksys.ui.TelaInicial
 ```
 
-### Executar demonstracao de threads
-
-Use esta opcao para demonstrar os requisitos de multithreading:
+Para demonstrar os requisitos de multithreading pelo terminal, execute:
 
 ```powershell
 java -cp out parksys.main.Principal
 ```
 
 A classe `Principal` executa uma simulacao com threads antes de abrir a interface grafica.
+
+### Rodar por uma IDE
+
+1. Clone o repositorio.
+2. Abra a pasta `ParkSys` na IDE.
+3. Configure um JDK 8 ou superior.
+4. Marque a pasta `src` como pasta de codigo-fonte, se a IDE nao fizer isso automaticamente.
+5. Clique com o botao direito na classe desejada e selecione `Run Java`, `Run` ou opcao equivalente.
+
+Para usar o sistema normalmente, execute:
+
+```text
+parksys.ui.TelaInicial
+```
+
+Para demonstrar os requisitos de threads, execute:
+
+```text
+parksys.main.Principal
+```
 
 ## Persistencia de dados
 
